@@ -630,7 +630,7 @@ const Editor = () => {
                 {/* Predictions Content */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-base font-medium">Advanced GPT Model</span>
+                    <span className="text-base font-medium">Advanced GPT Models</span>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input 
                         type="checkbox" 
