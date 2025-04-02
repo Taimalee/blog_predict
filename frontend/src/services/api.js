@@ -93,4 +93,32 @@ export const api = {
     });
     return handleResponse(response);
   },
+
+  // Predictions
+  predictBasic: async (text, numWords = 5) => {
+    const response = await fetch(`${API_URL}/predict/basic`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ text, num_words: numWords }),
+    });
+    return handleResponse(response);
+  },
+
+  predictAdvanced: async (text, numWords = 5) => {
+    const response = await fetch(`${API_URL}/predict/advanced`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ text, num_words: numWords }),
+    });
+    return handleResponse(response);
+  },
+
+  spellCheck: async (text) => {
+    const response = await fetch(`${API_URL}/predict/spellcheck`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ text }),
+    });
+    return handleResponse(response);
+  },
 }; 

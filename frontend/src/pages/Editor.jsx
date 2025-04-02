@@ -87,7 +87,9 @@ const Editor = () => {
       
       try {
         const modelType = isAdvancedModel ? 'advanced' : 'basic';
-        const predictions = await api.predictWords(text, 5, modelType);
+        const predictions = await (modelType === 'advanced' 
+          ? api.predictAdvanced(text, 5)
+          : api.predictBasic(text, 5));
         console.log('Predictions:', predictions); // Debug log
         if (predictions && predictions.length > 0) {
           setSuggestion(predictions[0]);
@@ -630,7 +632,7 @@ const Editor = () => {
                 {/* Predictions Content */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-base font-medium">Advanced GPT Models</span>
+                    <span className="text-base font-medium">Advanced GPT Model</span>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input 
                         type="checkbox" 
