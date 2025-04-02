@@ -5,6 +5,13 @@
 .env.test.local
 .env.production.local
 
+# Cursor
+.cursor/
+.cursor-rules/
+cursor-rules/
+.cursor-rules.mdc
+blogrules.mdc
+
 # Python
 __pycache__/
 *.py[cod]
