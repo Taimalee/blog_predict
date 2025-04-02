@@ -1,12 +1,12 @@
 from typing import List, Optional
-import openai
+from openai import AsyncOpenAI
 from app.core.config import settings
 from collections import defaultdict
 import random
 
 class PredictionService:
     def __init__(self):
-        openai.api_key = settings.OPENAI_API_KEY
+        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self.trigram_model = defaultdict(lambda: defaultdict(int))
 
     def train_trigram_model(self, text: str) -> None:
@@ -50,7 +50,7 @@ class PredictionService:
     async def predict_advanced(self, text: str, num_words: int = 5) -> List[str]:
         """Predict next words using GPT-3.5 Turbo."""
         try:
-            response = await openai.ChatCompletion.acreate(
+            response = await self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant that predicts the next words in a text. Only return the predicted words, separated by spaces."},
@@ -63,4 +63,21 @@ class PredictionService:
             return predictions[:num_words]
         except Exception as e:
             print(f"Error in GPT prediction: {e}")
-            return [] 
+            return []
+
+    async def spellcheck_text(self, text: str) -> str:
+        """Check and correct spelling in the given text using GPT-3.5 Turbo."""
+        try:
+            response = await self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant that corrects spelling and grammar in text. Only return the corrected text, maintaining the original meaning and style."},
+                    {"role": "user", "content": f"Correct any spelling or grammar errors in this text: '{text}'"}
+                ],
+                max_tokens=100,
+                temperature=0.3
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"Error in spellcheck: {e}")
+            return text 

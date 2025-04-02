@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     # Database
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres"
-    POSTGRES_DB: str = "blog_predict"
+    POSTGRES_PASSWORD: str = "lee28"
+    POSTGRES_DB: str = "predict"
     DATABASE_URL: Optional[str] = None
     
     # JWT
