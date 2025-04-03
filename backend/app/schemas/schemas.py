@@ -19,13 +19,15 @@ class User(UserBase):
 
 # Post schemas
 class PostBase(BaseModel):
+    title: str = "Untitled Post"
     content: str
+    status: str = "draft"
 
 class PostCreate(PostBase):
     user_id: UUID
 
 class Post(PostBase):
-    id: UUID
+    id: int
     user_id: UUID
     created_at: datetime
 

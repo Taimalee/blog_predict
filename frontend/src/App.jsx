@@ -6,6 +6,7 @@ import Welcome from './pages/Welcome';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Editor from './pages/Editor';
+import Posts from './pages/Posts';
 
 const App = () => {
   return (
@@ -35,6 +36,14 @@ const App = () => {
             element={
               <PrivateRoute>
                 <Editor />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/posts"
+            element={
+              <PrivateRoute>
+                <Posts />
               </PrivateRoute>
             }
           />

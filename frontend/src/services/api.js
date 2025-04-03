@@ -98,6 +98,14 @@ export const api = {
     return handleResponse(response);
   },
 
+  deletePost: async (postId) => {
+    const response = await fetch(`${API_URL}/posts/${postId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  },
+
   // Predictions
   predictBasic: async (text, numWords = 5) => {
     const userId = localStorage.getItem('userId');

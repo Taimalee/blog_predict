@@ -57,4 +57,19 @@ def get_user_posts(user_id: UUID, db: Session = Depends(deps.get_db)):
 
     # Get user's posts
     posts = db.query(Post).filter(Post.user_id == user_id).all()
-    return {"posts": posts} 
+    return {"posts": posts}
+
+@router.delete("/posts/{post_id}", response_model=PostSchema)
+def delete_post(post_id: int, db: Session = Depends(deps.get_db)):
+    """
+    Delete a post by ID.
+    """
+    # Get the post
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    # Delete the post
+    db.delete(post)
+    db.commit()
+    return post 

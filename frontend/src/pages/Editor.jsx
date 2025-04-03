@@ -17,7 +17,8 @@ const Editor = () => {
   const [isAdvancedModel, setIsAdvancedModel] = useState(true);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showSaveNotification, setShowSaveNotification] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
   const navigate = useNavigate();
   const editorRef = useRef(null);
   const suggestionsRef = useRef(null);
@@ -329,14 +330,16 @@ const Editor = () => {
       setCursorPosition({ x, y });
     }
     
-    // Only trigger predictions if there's actual content and auto-complete is enabled
+    // Handle predictions if content exists and auto-complete is enabled
     if (newContent.trim() && isAutoCompleteEnabled) {
       debouncedPredict(newContent);
-      if (isSpellCheckEnabled) {
-        debouncedSpellCheck(newContent);
-      }
     } else {
       setSuggestions([]);
+    }
+
+    // Handle spell check independently if content exists and spell check is enabled
+    if (newContent.trim() && isSpellCheckEnabled) {
+      debouncedSpellCheck(newContent);
     }
   };
 
@@ -429,9 +432,10 @@ const Editor = () => {
         });
       }
 
-      setShowSaveNotification(true);
+      setNotificationMessage('Saved Draft');
+      setShowNotification(true);
       setTimeout(() => {
-        setShowSaveNotification(false);
+        setShowNotification(false);
       }, 2000);
       
       // Refresh drafts list in Dashboard
@@ -440,6 +444,40 @@ const Editor = () => {
       }
     } catch (error) {
       console.error('Error saving draft:', error);
+    }
+  };
+
+  const handlePublish = async () => {
+    try {
+      const content = editorRef.current.textContent;
+      
+      if (postId) {
+        // Update existing post to published
+        await api.updatePost(postId, {
+          title: title || "Untitled Post",
+          content,
+          status: 'published'
+        });
+      } else {
+        // Create new published post
+        const userId = localStorage.getItem('userId');
+        await api.saveDraft({
+          userId,
+          title: title || "Untitled Post",
+          content,
+          status: 'published'
+        });
+      }
+
+      setNotificationMessage('Blog Published');
+      setShowNotification(true);
+      setTimeout(() => {
+        setShowNotification(false);
+        navigate('/posts'); // Navigate to posts page after publishing
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error publishing post:', error);
     }
   };
 
@@ -462,7 +500,7 @@ const Editor = () => {
             New Post
           </button>
           <button 
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/posts')}
             className="text-gray-700 hover:text-black"
           >
             My Posts
@@ -518,10 +556,10 @@ const Editor = () => {
         </div>
       </nav>
 
-      {/* Save Notification */}
-      {showSaveNotification && (
+      {/* Notification */}
+      {showNotification && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg">
-          Saved Draft
+          {notificationMessage}
         </div>
       )}
 
@@ -548,7 +586,10 @@ const Editor = () => {
                 </svg>
                 Save Draft
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-900">
+              <button 
+                onClick={handlePublish}
+                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-900"
+              >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>

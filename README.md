@@ -86,7 +86,77 @@ Blog Predict is an intelligent writing assistant that helps bloggers and content
 - GPT-3.5 Turbo for advanced contextual understanding
 - Hybrid prediction system for optimal results
 
-## 🗂 Project Structure
+## 📊 Database Structure
+
+The application uses PostgreSQL with the following tables:
+
+### Users Table
+```sql
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+- Stores user account information
+- Uses UUID for secure identification
+- Tracks account creation time
+
+### Posts Table
+```sql
+CREATE TABLE posts (
+    id INTEGER PRIMARY KEY DEFAULT nextval('posts_id_seq'),
+    user_id UUID NOT NULL REFERENCES users(id),
+    title VARCHAR(255) NOT NULL DEFAULT 'Untitled Post',
+    content TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'draft',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+- Stores blog posts and drafts
+- Auto-incrementing integer IDs
+- Tracks creation and update times
+- Supports draft/published status
+
+### User Patterns Table
+```sql
+CREATE TABLE user_patterns (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    pattern_type TEXT NOT NULL,
+    pattern TEXT NOT NULL,
+    frequency INTEGER,
+    last_used TIMESTAMP
+);
+```
+- Stores user writing patterns
+- Tracks pattern frequency and usage
+- Enables personalized predictions
+
+### Suggestion Stats Table
+```sql
+CREATE TABLE suggestion_stats (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    shown_count INTEGER DEFAULT 0,
+    accepted_count INTEGER DEFAULT 0
+);
+```
+- Tracks prediction performance
+- Measures suggestion effectiveness
+- Helps improve prediction accuracy
+
+### Key Features
+- UUID-based user identification
+- Automatic timestamp management
+- Foreign key constraints for data integrity
+- Indexed columns for optimal performance
+- Support for draft/published post states
+- Pattern tracking for personalized suggestions
+
+## �� Project Structure
 ```
 blog-predict/
 ├── frontend/           # React frontend application

@@ -92,7 +92,7 @@ def create_post(
 def update_post(
     *,
     db: Session = Depends(deps.get_db),
-    id: str,
+    id: int,
     post_in: schemas.PostUpdate
 ) -> Any:
     """
@@ -118,7 +118,7 @@ def update_post(
 def read_post(
     *,
     db: Session = Depends(deps.get_db),
-    id: str,
+    id: int,
 ) -> Any:
     """
     Get post by ID.
@@ -132,7 +132,7 @@ def read_post(
 def delete_post(
     *,
     db: Session = Depends(deps.get_db),
-    id: str,
+    id: int,
     current_user: User = Depends(deps.get_current_active_user),
 ) -> Any:
     """
