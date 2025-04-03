@@ -25,13 +25,36 @@ def get_user_drafts(
     limit: int = 4
 ) -> Any:
     """
-    Get all draft posts for a specific user.
+    Get most recent draft posts for a specific user.
+    Limited to 4 posts for the Recent Drafts section.
     """
     drafts = db.query(Post).filter(
         Post.user_id == user_id,
         Post.status == 'draft'
     ).order_by(Post.created_at.desc()).limit(limit).all()
     return drafts
+
+@router.get("/stats/{user_id}")
+def get_user_stats(
+    user_id: UUID,
+    db: Session = Depends(deps.get_db)
+) -> Any:
+    """
+    Get user's writing stats including total words, drafts count, and published count.
+    """
+    # Get all user's posts
+    posts = db.query(Post).filter(Post.user_id == user_id).all()
+    
+    # Calculate stats
+    drafts = sum(1 for post in posts if post.status == 'draft')
+    published = sum(1 for post in posts if post.status == 'published')
+    total_words = sum(len(post.content.split()) for post in posts)
+    
+    return {
+        "drafts": drafts,
+        "published": published,
+        "words": total_words
+    }
 
 @router.post("/draft", response_model=schemas.Post)
 def save_draft(
@@ -40,15 +63,15 @@ def save_draft(
     post_in: schemas.PostCreate
 ) -> Any:
     """
-    Save a new draft post.
+    Save a new post (draft or published).
     """
     try:
-        # Create new draft post
+        # Create new post with provided status
         db_post = Post(
             user_id=post_in.user_id,
             title=post_in.title,
             content=post_in.content,
-            status='draft'
+            status=post_in.status  # Use the status from the request
         )
         db.add(db_post)
         db.commit()

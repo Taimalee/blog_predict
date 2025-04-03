@@ -6,6 +6,7 @@ const Dashboard = () => {
   const [posts, setPosts] = useState([]);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [suggestionStats, setSuggestionStats] = useState(null);
+  const [writingStats, setWritingStats] = useState({ drafts: 0, published: 0, words: 0 });
   const navigate = useNavigate();
   const profileMenuRef = useRef(null);
 
@@ -29,9 +30,19 @@ const Dashboard = () => {
     }
   };
 
+  const fetchWritingStats = async () => {
+    try {
+      const stats = await api.getWritingStats();
+      setWritingStats(stats);
+    } catch (error) {
+      console.error('Error fetching writing stats:', error);
+    }
+  };
+
   useEffect(() => {
     fetchDrafts();
     fetchSuggestionStats();
+    fetchWritingStats();
     window.refreshDrafts = fetchDrafts;
     return () => {
       delete window.refreshDrafts;
@@ -199,11 +210,14 @@ const Dashboard = () => {
                 onClick={() => navigate('/editor')}
                 className="w-full bg-black text-white py-2 rounded-md flex items-center justify-center gap-2 text-sm"
               >
-                + New Post
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                New Post
               </button>
             </div>
 
-            <div className="bg-white rounded-lg p-5 border border-gray-200">
+            <div className="bg-white rounded-lg p-7 border border-gray-200">
               <h2 className="text-lg font-semibold mb-1">Recent Drafts</h2>
               <p className="text-gray-600 mb-3">Continue where you left off</p>
               <div className="space-y-2 max-h-[500px] overflow-y-auto">
@@ -229,51 +243,55 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-6 h-fit border border-gray-200">
-            <h2 className="text-lg font-semibold mb-2">Recent Activity</h2>
-            <p className="text-gray-600 mb-6">Your writing stats</p>
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="text-center">
-                <p className="text-2xl font-semibold">{stats.drafts}</p>
-                <p className="text-gray-600">Drafts</p>
+          <div className="col-span-1">
+            <div className="bg-white rounded-lg p-7 border border-gray-200">
+              <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-gray-500 mb-4">Your writing stats</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <div className="text-3xl font-bold">{writingStats.drafts}</div>
+                    <div className="text-sm text-gray-500">Drafts</div>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold">{writingStats.published}</div>
+                    <div className="text-sm text-gray-500">Published</div>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold">{writingStats.words}</div>
+                    <div className="text-sm text-gray-500">Words</div>
+                  </div>
+                </div>
               </div>
-              <div className="text-center">
-                <p className="text-2xl font-semibold">{stats.published}</p>
-                <p className="text-gray-600">Published</p>
+              
+              <h3 className="text-lg font-semibold mb-2">Suggestion Stats</h3>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="text-center">
+                  <p className="text-2xl font-semibold">{suggestionStats?.shownCount || 0}</p>
+                  <p className="text-gray-600">Shown</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-semibold">{suggestionStats?.acceptedCount || 0}</p>
+                  <p className="text-gray-600">Accepted</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-semibold">
+                    {suggestionStats ? Math.round(suggestionStats.acceptanceRate * 100) : 0}%
+                  </p>
+                  <p className="text-gray-600">Rate</p>
+                </div>
               </div>
-              <div className="text-center">
-                <p className="text-2xl font-semibold">{stats.words}</p>
-                <p className="text-gray-600">Words</p>
-              </div>
+              
+              <button 
+                onClick={() => navigate('/posts')}
+                className="w-full flex items-center justify-center gap-2 py-2 text-sm border rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                View All Posts
+              </button>
             </div>
-            
-            <h3 className="text-lg font-semibold mb-2">Suggestion Stats</h3>
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="text-center">
-                <p className="text-2xl font-semibold">{suggestionStats?.shownCount || 0}</p>
-                <p className="text-gray-600">Shown</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-semibold">{suggestionStats?.acceptedCount || 0}</p>
-                <p className="text-gray-600">Accepted</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-semibold">
-                  {suggestionStats ? Math.round(suggestionStats.acceptanceRate * 100) : 0}%
-                </p>
-                <p className="text-gray-600">Rate</p>
-              </div>
-            </div>
-            
-            <button 
-              onClick={() => navigate('/posts')}
-              className="w-full flex items-center justify-center gap-2 py-2 text-sm border rounded-md text-gray-700 hover:bg-gray-50"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              View All Posts
-            </button>
           </div>
         </div>
       </div>

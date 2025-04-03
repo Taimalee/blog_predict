@@ -70,7 +70,7 @@ export const api = {
         user_id: data.userId,
         title: data.title || "Untitled Post",
         content: data.content,
-        status: 'draft'
+        status: data.status || 'draft'
       }),
     });
     return handleResponse(response);
@@ -161,6 +161,18 @@ export const api = {
       throw new Error('User not logged in');
     }
     const response = await fetch(`${API_URL}/predict/stats/${userId}`, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getWritingStats: async () => {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      throw new Error('User not logged in');
+    }
+    const response = await fetch(`${API_URL}/posts/stats/${userId}`, {
       method: 'GET',
       headers: getHeaders(),
     });
