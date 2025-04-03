@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
 import uuid
+from datetime import datetime
 
 class User(Base):
     __tablename__ = "users"
@@ -13,4 +14,5 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationship with Post model
-    posts = relationship("Post", back_populates="user") 
+    posts = relationship("Post", back_populates="user")
+    patterns = relationship("UserPattern", back_populates="user") 

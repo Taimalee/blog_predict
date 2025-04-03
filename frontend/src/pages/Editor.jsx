@@ -83,25 +83,57 @@ const Editor = () => {
   // Debounced prediction function
   const debouncedPredict = useCallback(
     debounce(async (text) => {
-      if (!isAutoCompleteEnabled || !text.trim()) return;
+      if (!isAutoCompleteEnabled) return;
       
       try {
-        const modelType = isAdvancedModel ? 'advanced' : 'basic';
-        const predictions = await (modelType === 'advanced' 
-          ? api.predictAdvanced(text, 5)
-          : api.predictBasic(text, 5));
-        console.log('Predictions:', predictions); // Debug log
-        if (predictions && predictions.length > 0) {
-          setSuggestion(predictions[0]);
+        const textarea = editorRef.current;
+        if (!textarea) return;
+        
+        const cursorPos = textarea.selectionStart;
+        const textBeforeCursor = text.slice(0, cursorPos);
+        
+        // Get the current word being typed
+        let startPos = cursorPos;
+        while (startPos > 0 && text[startPos - 1] !== ' ' && text[startPos - 1] !== '\n') {
+          startPos--;
+        }
+        const currentWord = text.slice(startPos, cursorPos);
+        
+        console.log('Current word being typed:', currentWord);
+        console.log('Text before cursor:', textBeforeCursor);
+        
+        // Only predict if we have a partial word
+        if (currentWord.length > 0) {
+          const predictions = await api.predictAdvanced(textBeforeCursor, 1);
+          console.log('Raw predictions from API:', predictions);
+          
+          if (predictions && predictions.length > 0) {
+            const prediction = predictions[0];
+            console.log('Selected prediction:', prediction);
+            
+            // Only show suggestion if it starts with the current word
+            if (prediction.toLowerCase().startsWith(currentWord.toLowerCase())) {
+              const remainingText = prediction.slice(currentWord.length);
+              console.log('Suggestion to show:', remainingText);
+              setSuggestion(remainingText);
+            } else {
+              console.log('Prediction does not start with current word, clearing suggestion');
+              setSuggestion('');
+            }
+          } else {
+            console.log('No predictions returned from API');
+            setSuggestion('');
+          }
         } else {
+          console.log('No current word to predict');
           setSuggestion('');
         }
       } catch (error) {
         console.error('Prediction error:', error);
         setSuggestion('');
       }
-    }, 500),
-    [isAutoCompleteEnabled, isAdvancedModel]
+    }, 300),
+    [isAutoCompleteEnabled]
   );
 
   // Debounced spell check function
@@ -110,25 +142,92 @@ const Editor = () => {
       if (!isSpellCheckEnabled) return;
       
       try {
-        const result = await api.spellCheck(text);
-        console.log('Spell check result:', result); // Debug log
-        if (result.corrected && result.corrected !== text) {
-          setContent(result.corrected);
+        const textarea = editorRef.current;
+        if (!textarea) return;
+        
+        const cursorPos = textarea.selectionStart;
+        const textBeforeCursor = text.slice(0, cursorPos);
+        
+        // Find the last word before the cursor
+        let startPos = cursorPos;
+        while (startPos > 0 && text[startPos - 1] !== ' ' && text[startPos - 1] !== '\n') {
+          startPos--;
+        }
+        const currentWord = text.slice(startPos, cursorPos);
+        
+        // Skip if not a word or if it's a system message word
+        if (!/^[a-zA-Z]+$/.test(currentWord) || 
+            currentWord.toLowerCase().includes('fix') || 
+            currentWord.toLowerCase().includes('spell') || 
+            currentWord.toLowerCase().includes('grammar') ||
+            currentWord.toLowerCase().includes('error') ||
+            currentWord.toLowerCase().includes('corrected')) {
+          return;
+        }
+        
+        const result = await api.spellCheck(currentWord);
+        
+        if (result.corrected && 
+            result.corrected !== currentWord && 
+            result.corrected.toLowerCase() !== currentWord.toLowerCase() &&
+            /^[a-zA-Z]+$/.test(result.corrected)) {
+          
+          // Replace the word
+          const beforeText = text.slice(0, startPos);
+          const afterText = text.slice(cursorPos);
+          const newContent = beforeText + result.corrected + afterText;
+          
+          // Update content and restore cursor position
+          setContent(newContent);
+          setTimeout(() => {
+            textarea.selectionStart = startPos + result.corrected.length;
+            textarea.selectionEnd = startPos + result.corrected.length;
+          }, 0);
         }
       } catch (error) {
         console.error('Spell check error:', error);
       }
-    }, 500),
+    }, 1000),
     [isSpellCheckEnabled]
   );
 
+  // Handle key events
+  const handleKeyDown = (e) => {
+    if (e.key === 'Tab' && suggestion) {
+      e.preventDefault();
+      
+      const textarea = editorRef.current;
+      if (!textarea) return;
+      
+      const cursorPos = textarea.selectionStart;
+      const beforeText = content.slice(0, cursorPos);
+      const afterText = content.slice(cursorPos);
+      
+      // Insert suggestion at cursor position
+      const newContent = beforeText + suggestion + ' ' + afterText;
+      setContent(newContent);
+      setSuggestion('');
+      
+      // Move cursor after the inserted suggestion
+      setTimeout(() => {
+        textarea.selectionStart = cursorPos + suggestion.length + 1;
+        textarea.selectionEnd = cursorPos + suggestion.length + 1;
+      }, 0);
+      
+      // Get new prediction after a short delay
+      setTimeout(() => {
+        debouncedPredict(newContent);
+      }, 10);
+    }
+  };
+
   // Handle editor input
   const handleInput = (e) => {
-    const newContent = e.currentTarget.textContent || '';
+    const newContent = e.target.value;
     setContent(newContent);
     
-    // Only trigger predictions if there's actual content
-    if (newContent.trim()) {
+    // Only trigger predictions if there's actual content and auto-complete is enabled
+    if (newContent.trim() && isAutoCompleteEnabled) {
       debouncedPredict(newContent);
       if (isSpellCheckEnabled) {
         debouncedSpellCheck(newContent);
@@ -137,121 +236,6 @@ const Editor = () => {
       setSuggestion('');
     }
   };
-
-  // Handle key events
-  const handleKeyDown = (e) => {
-    if ((e.key === 'Tab' || e.key === 'ArrowRight') && suggestion) {
-      e.preventDefault();
-      
-      const selection = window.getSelection();
-      if (!selection.rangeCount) return;
-      
-      const range = selection.getRangeAt(0);
-      const text = editorRef.current.textContent;
-      const cursorPos = range.startOffset;
-      
-      // Get the current word
-      let startPos = cursorPos;
-      while (startPos > 0 && text[startPos - 1] !== ' ' && text[startPos - 1] !== '\n') {
-        startPos--;
-      }
-      const currentWord = text.slice(startPos, cursorPos);
-      
-      // Check if we're completing a partial word
-      const isPartialWord = suggestion.toLowerCase().startsWith(currentWord.toLowerCase()) && currentWord.length < suggestion.length;
-      
-      if (isPartialWord) {
-        // Replace the partial word with the full suggestion
-        const newRange = document.createRange();
-        newRange.setStart(range.startContainer, startPos);
-        newRange.setEnd(range.startContainer, cursorPos);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-        const textNode = document.createTextNode(suggestion + ' ');
-        newRange.deleteContents();
-        newRange.insertNode(textNode);
-        
-        // Move cursor after the inserted text
-        const newPosition = document.createRange();
-        newPosition.setStartAfter(textNode);
-        newPosition.setEndAfter(textNode);
-        selection.removeAllRanges();
-        selection.addRange(newPosition);
-        
-        // Force cursor position update
-        updateCursorPosition();
-      } else {
-        // Handle complete word case (add suggestion after)
-        const hasSpaceBefore = cursorPos > 0 && text[cursorPos - 1] === ' ';
-        const textNode = document.createTextNode(
-          (hasSpaceBefore ? '' : ' ') + suggestion + ' '
-        );
-        range.insertNode(textNode);
-        
-        // Move cursor after the inserted text
-        const newPosition = document.createRange();
-        newPosition.setStartAfter(textNode);
-        newPosition.setEndAfter(textNode);
-        selection.removeAllRanges();
-        selection.addRange(newPosition);
-        
-        // Force cursor position update
-        updateCursorPosition();
-      }
-      
-      // Update content state with new content
-      if (editorRef.current) {
-        const newContent = editorRef.current.textContent;
-        setContent(newContent);
-        // Trigger prediction for next word after a short delay
-        setTimeout(() => {
-          debouncedPredict(newContent);
-          // Update cursor position again after prediction
-          updateCursorPosition();
-        }, 10);
-      }
-      
-      setSuggestion('');
-    }
-  };
-
-  // Update cursor position
-  const updateCursorPosition = () => {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0 && editorRef.current) {
-      const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      const editorRect = editorRef.current.getBoundingClientRect();
-      
-      // Only show suggestion if cursor is inside the editor
-      if (range.startContainer === editorRef.current || editorRef.current.contains(range.startContainer)) {
-        setCursorPosition({
-          x: rect.right - editorRect.left,
-          y: rect.top - editorRect.top
-        });
-      } else {
-        // Hide suggestion if cursor is outside editor
-        setSuggestion('');
-      }
-    }
-  };
-
-  // Effect to update cursor position and handle focus
-  useEffect(() => {
-    document.addEventListener('selectionchange', updateCursorPosition);
-    
-    // Hide suggestion when editor loses focus
-    const handleBlur = () => {
-      setSuggestion('');
-    };
-    
-    editorRef.current?.addEventListener('blur', handleBlur);
-    
-    return () => {
-      document.removeEventListener('selectionchange', updateCursorPosition);
-      editorRef.current?.removeEventListener('blur', handleBlur);
-    };
-  }, []);
 
   const handleLogout = async () => {
     try {
@@ -415,32 +399,33 @@ const Editor = () => {
             </div>
           </div>
           <div className="relative">
-            <div 
+            <textarea
               ref={editorRef}
-              className="w-full h-[calc(100vh-200px)] p-4 border rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-200 relative"
+              value={content}
+              onChange={handleInput}
+              onKeyDown={handleKeyDown}
+              className="w-full h-[calc(100vh-200px)] p-4 border rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-200 resize-none"
               style={{ 
                 fontSize: `${fontSize}px`,
                 fontFamily: `${fontFamily === 'sans' ? 'ui-sans-serif' : fontFamily === 'serif' ? 'ui-serif' : 'ui-monospace'}`,
                 textAlign: textAlign
               }}
-              contentEditable={true}
-              onInput={handleInput}
-              onKeyDown={handleKeyDown}
             />
-            {suggestion && (
-              <span
-                ref={suggestionRef}
-                className="absolute text-gray-400 pointer-events-none whitespace-pre"
-                style={{
-                  left: `${cursorPosition.x}px`,
-                  top: `${cursorPosition.y}px`,
+            {suggestion && isAutoCompleteEnabled && (
+              <div 
+                className="absolute pointer-events-none"
+                style={{ 
                   fontSize: `${fontSize}px`,
                   fontFamily: `${fontFamily === 'sans' ? 'ui-sans-serif' : fontFamily === 'serif' ? 'ui-serif' : 'ui-monospace'}`,
-                  lineHeight: 'inherit'
+                  textAlign: textAlign,
+                  whiteSpace: 'pre-wrap',
+                  overflow: 'hidden',
+                  left: `${editorRef.current ? editorRef.current.offsetLeft + editorRef.current.scrollLeft + editorRef.current.selectionStart * 8 : 0}px`,
+                  top: `${editorRef.current ? editorRef.current.offsetTop + editorRef.current.scrollTop + Math.floor(editorRef.current.selectionStart / editorRef.current.cols) * (fontSize + 4) : 0}px`
                 }}
               >
-                {` ${suggestion}`}
-              </span>
+                <span className="text-gray-600">{suggestion}</span>
+              </div>
             )}
           </div>
         </div>

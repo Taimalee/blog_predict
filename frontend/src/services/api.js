@@ -22,7 +22,9 @@ export const api = {
       headers: getHeaders(),
       body: JSON.stringify({ email, password }),
     });
-    return handleResponse(response);
+    const data = await handleResponse(response);
+    console.log('Signup response:', data);
+    return data;
   },
 
   login: async ({ email, password }) => {
@@ -31,7 +33,9 @@ export const api = {
       headers: getHeaders(),
       body: JSON.stringify({ email, password }),
     });
-    return handleResponse(response);
+    const data = await handleResponse(response);
+    console.log('Login response:', data);
+    return data;
   },
 
   logout: async () => {
@@ -96,19 +100,27 @@ export const api = {
 
   // Predictions
   predictBasic: async (text, numWords = 5) => {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      throw new Error('User not logged in');
+    }
     const response = await fetch(`${API_URL}/predict/basic`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ text, num_words: numWords }),
+      body: JSON.stringify({ text, num_words: numWords, user_id: userId }),
     });
     return handleResponse(response);
   },
 
   predictAdvanced: async (text, numWords = 5) => {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      throw new Error('User not logged in');
+    }
     const response = await fetch(`${API_URL}/predict/advanced`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ text, num_words: numWords }),
+      body: JSON.stringify({ text, num_words: numWords, user_id: userId }),
     });
     return handleResponse(response);
   },

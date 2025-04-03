@@ -19,18 +19,26 @@ const Login = () => {
         // Login flow
         const response = await api.login({ email, password });
         console.log('Login response:', response);
-        localStorage.setItem('userId', response.id);
-        localStorage.setItem('userEmail', email);
-        console.log('Navigating to dashboard...');
-        navigate('/dashboard');
+        if (response && response.id) {
+          localStorage.setItem('userId', response.id);
+          localStorage.setItem('userEmail', email);
+          console.log('Navigating to dashboard...');
+          navigate('/dashboard');
+        } else {
+          throw new Error('Invalid login response');
+        }
       } else {
         // Signup flow
         const response = await api.signup({ email, password });
         console.log('Signup response:', response);
-        localStorage.setItem('userId', response.id);
-        localStorage.setItem('userEmail', email);
-        console.log('Navigating to dashboard...');
-        navigate('/dashboard');
+        if (response && response.id) {
+          localStorage.setItem('userId', response.id);
+          localStorage.setItem('userEmail', email);
+          console.log('Navigating to dashboard...');
+          navigate('/dashboard');
+        } else {
+          throw new Error('Invalid signup response');
+        }
       }
     } catch (err) {
       console.error('Auth error:', err);

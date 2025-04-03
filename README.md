@@ -1,53 +1,144 @@
-# Blog Predict
+# Blog Predict: Next Word Predictor Web App
+> AI-powered writing assistant for bloggers.
 
-A full-stack blog application with predictive text functionality using FastAPI and React.
+## 📘 Project Overview
 
-## Features
+Blog Predict is an intelligent writing assistant that helps bloggers and content creators overcome writer's block and enhance their writing productivity. The application provides real-time next-word predictions as users type, combining traditional N-gram models with advanced transformer-based AI to deliver contextually aware suggestions.
 
-- User authentication with JWT
-- Blog post creation and management
-- Real-time text prediction using:
-  - Basic trigram model
-  - Advanced GPT-3.5 Turbo model
-- Modern UI with Tailwind CSS
-- Protected routes
-- Draft and publish functionality
+### What It Does
+- Real-time next-word prediction in a clean, distraction-free editor
+- Intelligent suggestions based on both local context and global patterns
+- Seamless integration of multiple prediction models for optimal results
 
-## Prerequisites
+### Who It's For
+- Bloggers and content creators
+- Writers looking to speed up their writing process
+- Anyone seeking AI assistance to overcome writer's block
 
+### The Problem It Solves
+- Reduces writer's block by providing intelligent suggestions
+- Eliminates repetitive phrasing through contextual awareness
+- Speeds up the writing process with real-time predictions
+- Enhances writing quality through AI-powered assistance
+
+## 🚀 Features
+
+### Core Functionality
+- Simple, intuitive text editor with real-time predictions
+- Dual-model prediction system:
+  - N-gram model for quick, local context predictions
+  - GPT-3.5 Turbo for advanced contextual understanding
+- Personalized suggestions based on user's writing history
+- Usage analytics tracking for prediction accuracy
+- Real-time spell checking with AI-powered corrections
+- Customizable text formatting options:
+  - Font family selection (Sans-serif, Serif, Monospace)
+  - Font size adjustment
+  - Text alignment options
+  - Basic formatting (Bold, Italic, Underline)
+
+### Editor Features
+- Distraction-free writing environment
+- Real-time word suggestions with Tab completion
+- Toggle between basic and advanced prediction models
+- Auto-complete on/off toggle
+- Spell check on/off toggle
+- Draft saving and management
+- Post status tracking (draft/published)
+
+### Technical Features
+- Real-time tokenization and frequency analysis
+- Context-aware prediction system
+- Adaptive learning from user acceptance patterns
+- Secure user authentication and data storage
+- User writing style analysis and pattern recognition
+- Personalized vocabulary level matching
+- Common transition word suggestions
+- Error handling and fallback mechanisms
+
+### User Experience
+- Clean, modern interface with TailwindCSS
+- Responsive design for all devices
+- Intuitive navigation between posts and drafts
+- Real-time feedback on predictions
+- Customizable editor settings
+- Profile management and user preferences
+
+## 🛠 Tech Stack
+
+### Frontend
+- React with TypeScript
+- TailwindCSS for styling
+- Modern, responsive UI components
+
+### Backend
+- FastAPI (Python)
+- Async-first architecture
+- RESTful API design
+
+### Database
+- PostgreSQL
+- Efficient data storage and retrieval
+- Secure user data management
+
+### AI/ML Models
+- N-gram models for basic prediction
+- GPT-3.5 Turbo for advanced contextual understanding
+- Hybrid prediction system for optimal results
+
+## 🗂 Project Structure
+```
+blog-predict/
+├── frontend/           # React frontend application
+├── backend/           # FastAPI backend server
+│   ├── app/          # Main application code
+│   ├── models/       # ML models and prediction logic
+│   └── api/          # API endpoints
+├── models/           # Trained prediction models
+└── docs/            # Project documentation
+```
+
+## 🧪 Getting Started
+
+### Prerequisites
 - Python 3.8+
 - Node.js 14+
 - PostgreSQL
-- OpenAI API key (for advanced predictions)
+- OpenAI API key (for GPT-3.5 predictions)
 
-## Backend Setup
+### Backend Setup
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/blog-predict.git
+cd blog-predict
+```
 
-1. Create a virtual environment and activate it:
+2. Create and activate virtual environment:
 ```bash
 cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-2. Install dependencies:
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file in the backend directory:
-```
+4. Configure environment variables:
+```bash
+# Create .env file in backend directory
 DATABASE_URL=postgresql://user:password@localhost/blog_predict
 SECRET_KEY=your-secret-key
 OPENAI_API_KEY=your-openai-api-key
 ```
 
-4. Run the backend server:
+5. Start the backend server:
 ```bash
 uvicorn app.main:app --reload
 ```
 
-## Frontend Setup
-
+### Frontend Setup
 1. Install dependencies:
 ```bash
 cd frontend
@@ -59,59 +150,11 @@ npm install
 npm start
 ```
 
-## Database Setup
+3. Open your browser and navigate to `http://localhost:3000`
 
-The application uses PostgreSQL with the following tables:
-
-```sql
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
-CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS posts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    status VARCHAR(20) DEFAULT 'draft',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-## API Endpoints
-
-### Authentication
-- `POST /api/v1/login/access-token` - Login and get access token
-
-### Posts
-- `GET /api/v1/posts` - Get all posts for current user
-- `POST /api/v1/posts` - Create a new post
-- `GET /api/v1/posts/{id}` - Get a specific post
-- `PUT /api/v1/posts/{id}` - Update a post
-- `DELETE /api/v1/posts/{id}` - Delete a post
-
-### Predictions
-- `POST /api/v1/predict/basic` - Get predictions using trigram model
-- `POST /api/v1/predict/advanced` - Get predictions using GPT-3.5
-
-## Usage
-
-1. Register a new account or login
-2. Create a new post or edit an existing one
-3. Choose between basic or advanced prediction model
-4. Start typing to see word predictions
-5. Save as draft or publish your post
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request 
+## 📝 Usage
+1. Create an account or log in
+2. Start a new post or open an existing one
+3. Begin typing to see real-time word predictions
+4. Accept or ignore suggestions as needed
+5. Save your work or publish when ready
