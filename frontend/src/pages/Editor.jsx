@@ -100,15 +100,19 @@ const Editor = () => {
         }
         const currentWord = text.slice(startPos, cursorPos);
         
+        // Count words before cursor
+        const wordsBeforeCursor = textBeforeCursor.trim().split(/\s+/).filter(word => word.length > 0);
+        
         console.log('Prediction debug:', {
           currentWord,
           textBeforeCursor,
           cursorPos,
-          startPos
+          startPos,
+          wordCount: wordsBeforeCursor.length
         });
         
-        // Only predict if we have a partial word
-        if (currentWord.length > 0) {
+        // Only predict if we have at least two words and are typing a new word
+        if (wordsBeforeCursor.length >= 2 && currentWord.length > 0) {
           const predictions = await api.predictAdvanced(textBeforeCursor, 3);
           console.log('API predictions:', predictions);
           
@@ -144,46 +148,52 @@ const Editor = () => {
         const cursorPos = textarea.selectionStart;
         const textBeforeCursor = text.slice(0, cursorPos);
         
-        // Find the last word before the cursor
-        let startPos = cursorPos;
-        while (startPos > 0 && text[startPos - 1] !== ' ' && text[startPos - 1] !== '\n') {
-          startPos--;
-        }
-        const currentWord = text.slice(startPos, cursorPos);
+        // Split text into words and get the word before the current one
+        const words = textBeforeCursor.split(/\s+/);
+        const currentWordIndex = words.length - 1;
+        const lastWord = currentWordIndex > 0 ? words[currentWordIndex - 1] : '';
         
-        // Skip if not a word or if it's a system message word
-        if (!/^[a-zA-Z]+$/.test(currentWord) || 
-            currentWord.toLowerCase().includes('fix') || 
-            currentWord.toLowerCase().includes('spell') || 
-            currentWord.toLowerCase().includes('grammar') ||
-            currentWord.toLowerCase().includes('error') ||
-            currentWord.toLowerCase().includes('corrected')) {
+        // Skip if the last word is empty or contains special characters
+        if (!lastWord || !/^[a-zA-Z]+$/.test(lastWord) || 
+            lastWord.toLowerCase().includes('fix') || 
+            lastWord.toLowerCase().includes('spell') || 
+            lastWord.toLowerCase().includes('grammar') ||
+            lastWord.toLowerCase().includes('error') ||
+            lastWord.toLowerCase().includes('corrected')) {
           return;
         }
         
-        const result = await api.spellCheck(currentWord);
+        const result = await api.spellCheck(lastWord);
         
         if (result.corrected && 
-            result.corrected !== currentWord && 
-            result.corrected.toLowerCase() !== currentWord.toLowerCase() &&
+            result.corrected !== lastWord && 
+            result.corrected.toLowerCase() !== lastWord.toLowerCase() &&
             /^[a-zA-Z]+$/.test(result.corrected)) {
           
-          // Replace the word
-          const beforeText = text.slice(0, startPos);
-          const afterText = text.slice(cursorPos);
-          const newContent = beforeText + result.corrected + afterText;
+          // Find the position of the last word
+          const lastWordStartPos = textBeforeCursor.lastIndexOf(lastWord);
+          if (lastWordStartPos === -1) return;
           
-          // Update content and restore cursor position
+          // Replace the word while preserving cursor position
+          const beforeLastWord = text.slice(0, lastWordStartPos);
+          const afterLastWord = text.slice(lastWordStartPos + lastWord.length);
+          const newContent = beforeLastWord + result.corrected + afterLastWord;
+          
+          // Calculate new cursor position
+          const cursorOffset = cursorPos - (lastWordStartPos + lastWord.length);
+          const newCursorPos = lastWordStartPos + result.corrected.length + cursorOffset;
+          
+          // Update content and maintain cursor position
           setContent(newContent);
           setTimeout(() => {
-            textarea.selectionStart = startPos + result.corrected.length;
-            textarea.selectionEnd = startPos + result.corrected.length;
+            textarea.selectionStart = newCursorPos;
+            textarea.selectionEnd = newCursorPos;
           }, 0);
         }
       } catch (error) {
         console.error('Spell check error:', error);
       }
-    }, 1000),
+    }, 500), // Reduced debounce time for more responsive spell checking
     [isSpellCheckEnabled]
   );
 
@@ -220,18 +230,24 @@ const Editor = () => {
     
     const cursorPos = textarea.selectionStart;
     const beforeText = content.slice(0, cursorPos);
+    
+    // Find the start of the current word
+    let startPos = cursorPos;
+    while (startPos > 0 && beforeText[startPos - 1] !== ' ' && beforeText[startPos - 1] !== '\n') {
+      startPos--;
+    }
+    
+    // Get the text before the current word and the text after cursor
+    const textBeforeWord = content.slice(0, startPos);
     const afterText = content.slice(cursorPos);
     
-    // Check if we need to add a space before the suggestion
-    const needsSpace = beforeText.length > 0 && !beforeText.endsWith(' ') && !beforeText.endsWith('\n');
-    
-    // Insert suggestion at cursor position with space if needed
-    const newContent = beforeText + (needsSpace ? ' ' : '') + suggestion + ' ' + afterText;
+    // Insert suggestion, replacing the partial word
+    const newContent = textBeforeWord + suggestion + ' ' + afterText;
     setContent(newContent);
     setSuggestions([]);
     
     // Move cursor after the inserted suggestion
-    const newCursorPos = cursorPos + (needsSpace ? 1 : 0) + suggestion.length + 1;
+    const newCursorPos = startPos + suggestion.length + 1;
     setTimeout(() => {
       textarea.selectionStart = newCursorPos;
       textarea.selectionEnd = newCursorPos;
@@ -262,21 +278,40 @@ const Editor = () => {
     const textarea = editorRef.current;
     if (textarea) {
       const rect = textarea.getBoundingClientRect();
-      const textBeforeCursor = newContent.slice(0, textarea.selectionStart);
+      const cursorPos = textarea.selectionStart;
+      const textBeforeCursor = newContent.slice(0, cursorPos);
       const lines = textBeforeCursor.split('\n');
       const currentLine = lines.length - 1;
       const currentLineText = lines[currentLine];
       
-      // Calculate position based on textarea's scroll position
+      // Find the start of the current word
+      let startPos = cursorPos;
+      while (startPos > 0 && newContent[startPos - 1] !== ' ' && newContent[startPos - 1] !== '\n') {
+        startPos--;
+      }
+      
+      // Calculate position based on the current word position
       const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
       const scrollTop = textarea.scrollTop;
       const scrollLeft = textarea.scrollLeft;
       
-      // Calculate the position of the cursor
-      const x = rect.left + scrollLeft + (currentLineText.length * 8); // Approximate character width
-      const y = rect.top + scrollTop + (currentLine * lineHeight);
+      // Create a temporary span to measure text width accurately
+      const span = document.createElement('span');
+      span.style.font = window.getComputedStyle(textarea).font;
+      span.style.visibility = 'hidden';
+      span.style.position = 'absolute';
+      span.style.whiteSpace = 'pre';
       
-      console.log('Cursor position:', { x, y, currentLineText, lineHeight });
+      // Get the text up to the start of the current word
+      const textToCurrentWord = currentLineText.slice(0, startPos - (cursorPos - currentLineText.length));
+      span.textContent = textToCurrentWord;
+      document.body.appendChild(span);
+      
+      // Calculate the x position based on the width of text before the current word
+      const x = rect.left + span.offsetWidth - scrollLeft;
+      const y = rect.top + (currentLine * lineHeight) - scrollTop;
+      
+      document.body.removeChild(span);
       setCursorPosition({ x, y });
     }
     
@@ -298,20 +333,40 @@ const Editor = () => {
 
     const handleSelectionChange = () => {
       const rect = textarea.getBoundingClientRect();
-      const textBeforeCursor = content.slice(0, textarea.selectionStart);
+      const cursorPos = textarea.selectionStart;
+      const textBeforeCursor = content.slice(0, cursorPos);
       const lines = textBeforeCursor.split('\n');
       const currentLine = lines.length - 1;
       const currentLineText = lines[currentLine];
       
-      // Calculate position based on textarea's scroll position
+      // Find the start of the current word
+      let startPos = cursorPos;
+      while (startPos > 0 && content[startPos - 1] !== ' ' && content[startPos - 1] !== '\n') {
+        startPos--;
+      }
+      
+      // Calculate position based on the current word position
       const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
       const scrollTop = textarea.scrollTop;
       const scrollLeft = textarea.scrollLeft;
       
-      // Calculate the position of the cursor
-      const x = rect.left + scrollLeft + (currentLineText.length * 8); // Approximate character width
-      const y = rect.top + scrollTop + (currentLine * lineHeight);
+      // Create a temporary span to measure text width accurately
+      const span = document.createElement('span');
+      span.style.font = window.getComputedStyle(textarea).font;
+      span.style.visibility = 'hidden';
+      span.style.position = 'absolute';
+      span.style.whiteSpace = 'pre';
       
+      // Get the text up to the start of the current word
+      const textToCurrentWord = currentLineText.slice(0, startPos - (cursorPos - currentLineText.length));
+      span.textContent = textToCurrentWord;
+      document.body.appendChild(span);
+      
+      // Calculate the x position based on the width of text before the current word
+      const x = rect.left + span.offsetWidth - scrollLeft;
+      const y = rect.top + (currentLine * lineHeight) - scrollTop;
+      
+      document.body.removeChild(span);
       setCursorPosition({ x, y });
     };
 
@@ -508,10 +563,9 @@ const Editor = () => {
                 className="fixed bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-[1000]"
                 style={{
                   left: `${cursorPosition.x}px`,
-                  top: `${cursorPosition.y + 24}px`,
+                  top: `${cursorPosition.y + 45}px`,
                   minWidth: '200px',
                   maxWidth: '300px',
-                  transform: 'translateY(0)',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
                 }}
               >
