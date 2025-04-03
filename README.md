@@ -156,16 +156,28 @@ CREATE TABLE suggestion_stats (
 - Support for draft/published post states
 - Pattern tracking for personalized suggestions
 
-## �� Project Structure
+## 🗂 Project Structure
 ```
 blog-predict/
 ├── frontend/           # React frontend application
+│   ├── src/           # Source code
+│   ├── public/        # Static files
+│   ├── node_modules/  # Dependencies
+│   ├── package.json   # Frontend dependencies and scripts
+│   ├── tailwind.config.js  # TailwindCSS configuration
+│   └── postcss.config.js   # PostCSS configuration
 ├── backend/           # FastAPI backend server
 │   ├── app/          # Main application code
-│   ├── models/       # ML models and prediction logic
-│   └── api/          # API endpoints
-├── models/           # Trained prediction models
-└── docs/            # Project documentation
+│   │   ├── api/      # API endpoints
+│   │   ├── models/   # Database models
+│   │   ├── schemas/  # Pydantic schemas
+│   │   └── services/ # Business logic
+│   ├── alembic/      # Database migrations
+│   ├── venv/         # Python virtual environment
+│   ├── requirements.txt  # Python dependencies
+│   └── .env         # Environment variables
+├── .git/             # Git repository
+└── .gitignore        # Git ignore rules
 ```
 
 ## 🧪 Getting Started

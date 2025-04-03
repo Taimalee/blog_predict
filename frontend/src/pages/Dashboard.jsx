@@ -245,7 +245,7 @@ const Dashboard = () => {
 
           <div className="col-span-1">
             <div className="bg-white rounded-lg p-7 border border-gray-200">
-              <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
+              <h2 className="text-lg font-semibold mb-1">Recent Activity</h2>
               <div className="mb-6">
                 <h3 className="text-sm font-medium text-gray-500 mb-4">Your writing stats</h3>
                 <div className="grid grid-cols-3 gap-4">
