@@ -10,7 +10,8 @@ const Editor = () => {
   const [fontSize, setFontSize] = useState(16);
   const [textAlign, setTextAlign] = useState('left');
   const [fontFamily, setFontFamily] = useState('sans');
-  const [suggestion, setSuggestion] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [isAutoCompleteEnabled, setIsAutoCompleteEnabled] = useState(true);
   const [isSpellCheckEnabled, setIsSpellCheckEnabled] = useState(true);
   const [isAdvancedModel, setIsAdvancedModel] = useState(true);
@@ -19,7 +20,7 @@ const Editor = () => {
   const [showSaveNotification, setShowSaveNotification] = useState(false);
   const navigate = useNavigate();
   const editorRef = useRef(null);
-  const suggestionRef = useRef(null);
+  const suggestionsRef = useRef(null);
   const profileMenuRef = useRef(null);
   const { id: postId } = useParams(); // Get post ID from URL if editing
 
@@ -99,40 +100,35 @@ const Editor = () => {
         }
         const currentWord = text.slice(startPos, cursorPos);
         
-        console.log('Current word being typed:', currentWord);
-        console.log('Text before cursor:', textBeforeCursor);
+        console.log('Prediction debug:', {
+          currentWord,
+          textBeforeCursor,
+          cursorPos,
+          startPos
+        });
         
         // Only predict if we have a partial word
         if (currentWord.length > 0) {
-          const predictions = await api.predictAdvanced(textBeforeCursor, 1);
-          console.log('Raw predictions from API:', predictions);
+          const predictions = await api.predictAdvanced(textBeforeCursor, 3);
+          console.log('API predictions:', predictions);
           
           if (predictions && predictions.length > 0) {
-            const prediction = predictions[0];
-            console.log('Selected prediction:', prediction);
-            
-            // Only show suggestion if it starts with the current word
-            if (prediction.toLowerCase().startsWith(currentWord.toLowerCase())) {
-              const remainingText = prediction.slice(currentWord.length);
-              console.log('Suggestion to show:', remainingText);
-              setSuggestion(remainingText);
-            } else {
-              console.log('Prediction does not start with current word, clearing suggestion');
-              setSuggestion('');
-            }
+            // For single-word predictions, just use them directly
+            const suggestions = predictions.map(pred => pred);
+            console.log('Final suggestions:', suggestions);
+            setSuggestions(suggestions);
+            setSelectedIndex(0);
           } else {
-            console.log('No predictions returned from API');
-            setSuggestion('');
+            setSuggestions([]);
           }
         } else {
-          console.log('No current word to predict');
-          setSuggestion('');
+          setSuggestions([]);
         }
       } catch (error) {
         console.error('Prediction error:', error);
-        setSuggestion('');
+        setSuggestions([]);
       }
-    }, 300),
+    }, 150),
     [isAutoCompleteEnabled]
   );
 
@@ -193,38 +189,96 @@ const Editor = () => {
 
   // Handle key events
   const handleKeyDown = (e) => {
-    if (e.key === 'Tab' && suggestion) {
-      e.preventDefault();
-      
-      const textarea = editorRef.current;
-      if (!textarea) return;
-      
-      const cursorPos = textarea.selectionStart;
-      const beforeText = content.slice(0, cursorPos);
-      const afterText = content.slice(cursorPos);
-      
-      // Insert suggestion at cursor position
-      const newContent = beforeText + suggestion + ' ' + afterText;
-      setContent(newContent);
-      setSuggestion('');
-      
-      // Move cursor after the inserted suggestion
-      setTimeout(() => {
-        textarea.selectionStart = cursorPos + suggestion.length + 1;
-        textarea.selectionEnd = cursorPos + suggestion.length + 1;
-      }, 0);
-      
-      // Get new prediction after a short delay
-      setTimeout(() => {
-        debouncedPredict(newContent);
-      }, 10);
+    if (suggestions.length > 0) {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setSelectedIndex(prev => (prev + 1) % suggestions.length);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setSelectedIndex(prev => (prev - 1 + suggestions.length) % suggestions.length);
+          break;
+        case 'Tab':
+          e.preventDefault();
+          insertSuggestion(suggestions[selectedIndex]);
+          break;
+        case 'Escape':
+          e.preventDefault();
+          setSuggestions([]);
+          break;
+        default:
+          break;
+      }
     }
+  };
+
+  // Function to insert a suggestion
+  const insertSuggestion = (suggestion) => {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+    
+    const cursorPos = textarea.selectionStart;
+    const beforeText = content.slice(0, cursorPos);
+    const afterText = content.slice(cursorPos);
+    
+    // Check if we need to add a space before the suggestion
+    const needsSpace = beforeText.length > 0 && !beforeText.endsWith(' ') && !beforeText.endsWith('\n');
+    
+    // Insert suggestion at cursor position with space if needed
+    const newContent = beforeText + (needsSpace ? ' ' : '') + suggestion + ' ' + afterText;
+    setContent(newContent);
+    setSuggestions([]);
+    
+    // Move cursor after the inserted suggestion
+    const newCursorPos = cursorPos + (needsSpace ? 1 : 0) + suggestion.length + 1;
+    setTimeout(() => {
+      textarea.selectionStart = newCursorPos;
+      textarea.selectionEnd = newCursorPos;
+    }, 0);
+    
+    // Get new prediction after a short delay
+    setTimeout(() => {
+      debouncedPredict(newContent);
+    }, 10);
+  };
+
+  // Handle suggestion click
+  const handleSuggestionClick = (index) => {
+    insertSuggestion(suggestions[index]);
+  };
+
+  // Handle suggestion hover
+  const handleSuggestionHover = (index) => {
+    setSelectedIndex(index);
   };
 
   // Handle editor input
   const handleInput = (e) => {
     const newContent = e.target.value;
     setContent(newContent);
+    
+    // Update cursor position
+    const textarea = editorRef.current;
+    if (textarea) {
+      const rect = textarea.getBoundingClientRect();
+      const textBeforeCursor = newContent.slice(0, textarea.selectionStart);
+      const lines = textBeforeCursor.split('\n');
+      const currentLine = lines.length - 1;
+      const currentLineText = lines[currentLine];
+      
+      // Calculate position based on textarea's scroll position
+      const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
+      const scrollTop = textarea.scrollTop;
+      const scrollLeft = textarea.scrollLeft;
+      
+      // Calculate the position of the cursor
+      const x = rect.left + scrollLeft + (currentLineText.length * 8); // Approximate character width
+      const y = rect.top + scrollTop + (currentLine * lineHeight);
+      
+      console.log('Cursor position:', { x, y, currentLineText, lineHeight });
+      setCursorPosition({ x, y });
+    }
     
     // Only trigger predictions if there's actual content and auto-complete is enabled
     if (newContent.trim() && isAutoCompleteEnabled) {
@@ -233,9 +287,44 @@ const Editor = () => {
         debouncedSpellCheck(newContent);
       }
     } else {
-      setSuggestion('');
+      setSuggestions([]);
     }
   };
+
+  // Add cursor position update on selection change
+  useEffect(() => {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+
+    const handleSelectionChange = () => {
+      const rect = textarea.getBoundingClientRect();
+      const textBeforeCursor = content.slice(0, textarea.selectionStart);
+      const lines = textBeforeCursor.split('\n');
+      const currentLine = lines.length - 1;
+      const currentLineText = lines[currentLine];
+      
+      // Calculate position based on textarea's scroll position
+      const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
+      const scrollTop = textarea.scrollTop;
+      const scrollLeft = textarea.scrollLeft;
+      
+      // Calculate the position of the cursor
+      const x = rect.left + scrollLeft + (currentLineText.length * 8); // Approximate character width
+      const y = rect.top + scrollTop + (currentLine * lineHeight);
+      
+      setCursorPosition({ x, y });
+    };
+
+    textarea.addEventListener('select', handleSelectionChange);
+    textarea.addEventListener('click', handleSelectionChange);
+    textarea.addEventListener('keyup', handleSelectionChange);
+
+    return () => {
+      textarea.removeEventListener('select', handleSelectionChange);
+      textarea.removeEventListener('click', handleSelectionChange);
+      textarea.removeEventListener('keyup', handleSelectionChange);
+    };
+  }, [content]);
 
   const handleLogout = async () => {
     try {
@@ -411,20 +500,33 @@ const Editor = () => {
                 textAlign: textAlign
               }}
             />
-            {suggestion && isAutoCompleteEnabled && (
-              <div 
-                className="absolute pointer-events-none"
-                style={{ 
-                  fontSize: `${fontSize}px`,
-                  fontFamily: `${fontFamily === 'sans' ? 'ui-sans-serif' : fontFamily === 'serif' ? 'ui-serif' : 'ui-monospace'}`,
-                  textAlign: textAlign,
-                  whiteSpace: 'pre-wrap',
-                  overflow: 'hidden',
-                  left: `${editorRef.current ? editorRef.current.offsetLeft + editorRef.current.scrollLeft + editorRef.current.selectionStart * 8 : 0}px`,
-                  top: `${editorRef.current ? editorRef.current.offsetTop + editorRef.current.scrollTop + Math.floor(editorRef.current.selectionStart / editorRef.current.cols) * (fontSize + 4) : 0}px`
+            
+            {/* Suggestions Popup */}
+            {suggestions.length > 0 && (
+              <div
+                ref={suggestionsRef}
+                className="fixed bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-[1000]"
+                style={{
+                  left: `${cursorPosition.x}px`,
+                  top: `${cursorPosition.y + 24}px`,
+                  minWidth: '200px',
+                  maxWidth: '300px',
+                  transform: 'translateY(0)',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
                 }}
               >
-                <span className="text-gray-600">{suggestion}</span>
+                {suggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
+                      index === selectedIndex ? 'bg-gray-100' : ''
+                    }`}
+                    onClick={() => handleSuggestionClick(index)}
+                    onMouseEnter={() => handleSuggestionHover(index)}
+                  >
+                    {suggestion}
+                  </div>
+                ))}
               </div>
             )}
           </div>
