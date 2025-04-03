@@ -121,7 +121,7 @@ const Posts = () => {
     <div className="min-h-screen">
       {/* Header */}
       <nav className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold">BlogPredict</h1>
+        <h1 className="text-xl font-bold">W-Rite Expedite</h1>
         <div className="flex gap-4 items-center">
           <button 
             onClick={() => navigate('/dashboard')}

@@ -485,7 +485,7 @@ const Editor = () => {
     <div className="min-h-screen">
       {/* Header */}
       <nav className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold">BlogPredict</h1>
+        <h1 className="text-xl font-bold">W-Rite Expedite</h1>
         <div className="flex gap-4 items-center">
           <button 
             onClick={() => navigate('/dashboard')}
@@ -844,7 +844,7 @@ const Editor = () => {
 
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-base font-medium">Auto-Complete</span>
+                    <span className="text-base font-medium">Predictions</span>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input 
                         type="checkbox" 
@@ -855,7 +855,7 @@ const Editor = () => {
                       <div className="w-[52px] h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all"></div>
                     </label>
                   </div>
-                  <p className="text-sm text-gray-500">Automatically complete sentences</p>
+                  <p className="text-sm text-gray-500">Automatically predict words</p>
                 </div>
               </>
             )}
