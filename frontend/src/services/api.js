@@ -133,4 +133,29 @@ export const api = {
     });
     return handleResponse(response);
   },
+
+  trackSuggestion: async (data) => {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      throw new Error('User not logged in');
+    }
+    const response = await fetch(`${API_URL}/predict/track`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ ...data, user_id: userId }),
+    });
+    return handleResponse(response);
+  },
+
+  getSuggestionStats: async () => {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      throw new Error('User not logged in');
+    }
+    const response = await fetch(`${API_URL}/predict/stats/${userId}`, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  },
 }; 

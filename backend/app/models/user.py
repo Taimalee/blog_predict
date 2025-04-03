@@ -15,4 +15,5 @@ class User(Base):
 
     # Relationship with Post model
     posts = relationship("Post", back_populates="user")
-    patterns = relationship("UserPattern", back_populates="user") 
+    patterns = relationship("UserPattern", back_populates="user")
+    suggestion_stats = relationship("SuggestionStats", back_populates="user", uselist=False) 

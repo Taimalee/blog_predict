@@ -122,6 +122,13 @@ const Editor = () => {
             console.log('Final suggestions:', suggestions);
             setSuggestions(suggestions);
             setSelectedIndex(0);
+            
+            // Track shown suggestions
+            try {
+              await api.trackSuggestion({ shown: suggestions.length });
+            } catch (error) {
+              console.error('Error tracking shown suggestions:', error);
+            }
           } else {
             setSuggestions([]);
           }
@@ -224,7 +231,7 @@ const Editor = () => {
   };
 
   // Function to insert a suggestion
-  const insertSuggestion = (suggestion) => {
+  const insertSuggestion = async (suggestion) => {
     const textarea = editorRef.current;
     if (!textarea) return;
     
@@ -245,6 +252,13 @@ const Editor = () => {
     const newContent = textBeforeWord + suggestion + ' ' + afterText;
     setContent(newContent);
     setSuggestions([]);
+    
+    // Track accepted suggestion
+    try {
+      await api.trackSuggestion({ accepted: true });
+    } catch (error) {
+      console.error('Error tracking suggestion:', error);
+    }
     
     // Move cursor after the inserted suggestion
     const newCursorPos = startPos + suggestion.length + 1;
