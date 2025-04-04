@@ -1,9 +1,9 @@
-# Blog Predict: Next Word Predictor Web App
+# W-Rite Expedite: Next Word Predictor 
 > AI-powered writing assistant for bloggers.
 
 ## 📘 Project Overview
 
-Blog Predict is an intelligent writing assistant that helps bloggers and content creators overcome writer's block and enhance their writing productivity. The application provides real-time next-word predictions as users type, combining traditional N-gram models with advanced transformer-based AI to deliver contextually aware suggestions.
+W-Rite Expedite is an intelligent writing assistant that helps writers and content creators overcome writer's block and enhance their writing productivity. The application provides real-time next-word predictions as users type, combining traditional N-gram models with advanced transformer-based AI to deliver contextually aware suggestions.
 
 ### What It Does
 - Real-time next-word prediction in a clean, distraction-free editor

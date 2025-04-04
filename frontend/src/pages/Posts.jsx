@@ -197,7 +197,7 @@ const Posts = () => {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">My Posts</h1>
-            <p className="text-gray-600 mt-2">Manage all your blog posts in one place</p>
+            <p className="text-gray-600 mt-2">Manage all your posts in one place</p>
           </div>
           <button 
             onClick={() => navigate('/editor')}

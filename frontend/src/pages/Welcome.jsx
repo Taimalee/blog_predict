@@ -8,11 +8,11 @@ const Welcome = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-white">
       <div className="max-w-4xl w-full px-4 text-center">
         <h1 className="text-6xl font-bold text-gray-900 mb-6">
-          Write Better Blogs
+         W-Rite Expedite
         </h1>
         <p className="text-xl text-gray-600 mb-12">
           Our AI-powered tool helps you write engaging<br />
-          blog posts with smart predictions.
+          posts with smart predictions.
         </p>
         <div className="flex gap-4 justify-center">
           <button

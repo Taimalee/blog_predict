@@ -200,7 +200,7 @@ const Dashboard = () => {
           <div className="col-span-2">
             <div className="bg-white rounded-lg p-7 mb-4 border border-gray-200">
               <h2 className="text-lg font-semibold mb-1">Start Writing</h2>
-              <p className="text-gray-600 mb-3">Create a new blog post</p>
+              <p className="text-gray-600 mb-3">Create a new post</p>
               <div className="border-2 border-dashed border-gray-200 rounded-lg h-[80px] mb-3 flex items-center justify-center">
                 <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -249,16 +249,16 @@ const Dashboard = () => {
               <div className="mb-6">
                 <h3 className="text-sm font-medium text-gray-500 mb-4">Your writing stats</h3>
                 <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <div className="text-3xl font-bold">{writingStats.drafts}</div>
+                  <div className="text-center">
+                    <div className="text-3xl font-semibold">{writingStats.drafts}</div>
                     <div className="text-sm text-gray-500">Drafts</div>
                   </div>
-                  <div>
-                    <div className="text-3xl font-bold">{writingStats.published}</div>
+                  <div className="text-center">
+                    <div className="text-3xl font-semibold">{writingStats.published}</div>
                     <div className="text-sm text-gray-500">Published</div>
                   </div>
-                  <div>
-                    <div className="text-3xl font-bold">{writingStats.words}</div>
+                  <div className="text-center">
+                    <div className="text-3xl font-semibold">{writingStats.words}</div>
                     <div className="text-sm text-gray-500">Words</div>
                   </div>
                 </div>
@@ -268,17 +268,17 @@ const Dashboard = () => {
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div className="text-center">
                   <p className="text-2xl font-semibold">{suggestionStats?.shownCount || 0}</p>
-                  <p className="text-gray-600">Shown</p>
+                  <p className="text-sm text-gray-500">Shown</p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-semibold">{suggestionStats?.acceptedCount || 0}</p>
-                  <p className="text-gray-600">Accepted</p>
+                  <p className="text-sm text-gray-500">Accepted</p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-semibold">
                     {suggestionStats ? Math.round(suggestionStats.acceptanceRate * 100) : 0}%
                   </p>
-                  <p className="text-gray-600">Rate</p>
+                  <p className="text-sm text-gray-500">Rate</p>
                 </div>
               </div>
               
