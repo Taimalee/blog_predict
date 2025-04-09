@@ -114,7 +114,9 @@ const Editor = () => {
         
         // Only predict if we have at least two words and are typing a new word
         if (wordsBeforeCursor.length >= 2 && currentWord.length > 0) {
-          const predictions = await api.predictAdvanced(textBeforeCursor, 3);
+          // Choose the prediction function based on the toggle state
+          const predictionFunction = isAdvancedModel ? api.predictAdvanced : api.predictBasic;
+          const predictions = await predictionFunction(textBeforeCursor, 3);
           console.log('API predictions:', predictions);
           
           if (predictions && predictions.length > 0) {
@@ -141,7 +143,7 @@ const Editor = () => {
         setSuggestions([]);
       }
     }, 150),
-    [isAutoCompleteEnabled]
+    [isAutoCompleteEnabled, isAdvancedModel]
   );
 
   // Debounced spell check function
@@ -239,39 +241,47 @@ const Editor = () => {
     const cursorPos = textarea.selectionStart;
     const beforeText = content.slice(0, cursorPos);
     
-    // Find the start of the current word
+    // Find the start of the last word
     let startPos = cursorPos;
     while (startPos > 0 && beforeText[startPos - 1] !== ' ' && beforeText[startPos - 1] !== '\n') {
-      startPos--;
+        startPos--;
     }
     
-    // Get the text before the current word and the text after cursor
-    const textBeforeWord = content.slice(0, startPos);
-    const afterText = content.slice(cursorPos);
+    // Get the last word being typed
+    const lastWord = content.slice(startPos, cursorPos);
     
-    // Insert suggestion, replacing the partial word
-    const newContent = textBeforeWord + suggestion + ' ' + afterText;
+    // Determine the case
+    let newContent;
+    
+    // Check if the suggestion is a completion of the current word
+    // For example: "witho" + "ut" = "without"
+    if (suggestion.length <= lastWord.length) {
+        // If suggestion is shorter than the current word, it's likely a completion
+        // Check if the suggestion is a substring of the current word
+        if (lastWord.includes(suggestion)) {
+            // Case A: Completion
+            newContent = content.slice(0, startPos) + suggestion + content.slice(cursorPos);
+        } else {
+            // Case B: Replacement
+            newContent = content.slice(0, startPos) + suggestion + content.slice(cursorPos);
+        }
+    } else if (suggestion.startsWith(lastWord)) {
+        // Case C: Suggestion starts with the current word
+        newContent = content.slice(0, startPos) + suggestion + content.slice(cursorPos);
+    } else {
+        // Case D: New Word
+        newContent = content.slice(0, cursorPos) + ' ' + suggestion + content.slice(cursorPos);
+    }
+    
     setContent(newContent);
     setSuggestions([]);
     
-    // Track accepted suggestion
-    try {
-      await api.trackSuggestion({ accepted: true });
-    } catch (error) {
-      console.error('Error tracking suggestion:', error);
-    }
-    
     // Move cursor after the inserted suggestion
-    const newCursorPos = startPos + suggestion.length + 1;
+    const newCursorPos = startPos + suggestion.length + (suggestion.startsWith(lastWord) ? 0 : 1);
     setTimeout(() => {
-      textarea.selectionStart = newCursorPos;
-      textarea.selectionEnd = newCursorPos;
+        textarea.selectionStart = newCursorPos;
+        textarea.selectionEnd = newCursorPos;
     }, 0);
-    
-    // Get new prediction after a short delay
-    setTimeout(() => {
-      debouncedPredict(newContent);
-    }, 10);
   };
 
   // Handle suggestion click

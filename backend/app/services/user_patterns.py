@@ -102,19 +102,24 @@ class UserPatternService:
         suggestions = []
         
         # Suggest based on common transitions
-        if 'common_transitions' in patterns['writing_style_metrics']:
-            common_transitions = patterns['writing_style_metrics']['common_transitions']
-            if common_transitions:
-                suggestions.extend(list(common_transitions.keys())[:3])
+        if 'writing_style_metrics' in patterns and isinstance(patterns.get('writing_style_metrics'), dict):
+            style_metrics = patterns['writing_style_metrics']
+            if 'common_transitions' in style_metrics:
+                common_transitions = style_metrics['common_transitions']
+                if isinstance(common_transitions, dict) and common_transitions:
+                    suggestions.extend(list(common_transitions.keys())[:3])
         
         # Suggest based on vocabulary level
-        if 'vocabulary_level' in patterns['writing_style_metrics']:
-            vocab_level = patterns['writing_style_metrics']['vocabulary_level']
-            if vocab_level == 'basic':
-                suggestions.extend(['and', 'but', 'so'])
-            elif vocab_level == 'intermediate':
-                suggestions.extend(['however', 'therefore', 'consequently'])
-            else:
-                suggestions.extend(['furthermore', 'moreover', 'consequently'])
+        if 'writing_style_metrics' in patterns and isinstance(patterns.get('writing_style_metrics'), dict):
+            style_metrics = patterns['writing_style_metrics']
+            if 'vocabulary_level' in style_metrics:
+                vocab_level = style_metrics['vocabulary_level']
+                if isinstance(vocab_level, str):
+                    if vocab_level == 'basic':
+                        suggestions.extend(['and', 'but', 'so'])
+                    elif vocab_level == 'intermediate':
+                        suggestions.extend(['however', 'therefore', 'consequently'])
+                    else:
+                        suggestions.extend(['furthermore', 'moreover', 'consequently'])
         
         return suggestions 

@@ -5,24 +5,33 @@ from collections import defaultdict
 import random
 from app.services.user_patterns import UserPatternService
 from app.db.session import SessionLocal
+from app.models.ngram_model import NGramModel
+import os
+import re
 
 class PredictionService:
     def __init__(self):
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        self.trigram_model = defaultdict(lambda: defaultdict(int))
+        self.ngram_model = NGramModel()
         self.db = SessionLocal()
         self.pattern_service = UserPatternService(self.db)
+        
+        # Load pre-trained model if exists
+        model_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'ngram_model.json')
+        if os.path.exists(model_path):
+            self.ngram_model.load(model_path)
 
-    def train_trigram_model(self, text: str) -> None:
-        """Train the trigram model on input text."""
-        words = text.lower().split()
-        for i in range(len(words) - 2):
-            trigram = (words[i], words[i + 1])
-            next_word = words[i + 2]
-            self.trigram_model[trigram][next_word] += 1
+    def train_ngram_model(self, text: str) -> None:
+        """Train the n-gram model on input text."""
+        self.ngram_model.train(text)
+        
+        # Save the model
+        model_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'ngram_model.json')
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
+        self.ngram_model.save(model_path)
 
     def predict_basic(self, text: str, num_words: int = 5, user_id: str = None) -> List[str]:
-        """Basic prediction using trigram model with user patterns."""
+        """Basic prediction using n-gram model with user patterns."""
         # Get user patterns if user_id is provided
         user_patterns = None
         if user_id:
@@ -42,38 +51,24 @@ class PredictionService:
             except Exception as e:
                 print(f"Error getting suggestions: {e}")
         
-        # Combine with basic trigram predictions
-        words = text.lower().split()
-        if len(words) < 2:
-            return []
+        # Get n-gram predictions
+        predictions = self.ngram_model.predict(text, num_words)
         
-        predictions = []
-        current_trigram = (words[-2], words[-1])
+        # Filter out special tokens and duplicates
+        filtered_predictions = []
+        seen = set()
+        special_tokens = {'@-@', '<unk>'}
+        for pred in predictions:
+            if pred not in special_tokens and re.match(r'^\w+$', pred):
+                if pred not in seen:
+                    filtered_predictions.append(pred)
+                    seen.add(pred)
         
-        for _ in range(num_words):
-            if current_trigram not in self.trigram_model:
-                break
-                
-            next_words = self.trigram_model[current_trigram]
-            if not next_words:
-                break
-                
-            # Choose next word based on frequency
-            total = sum(next_words.values())
-            r = random.uniform(0, total)
-            cumsum = 0
-            for word, count in next_words.items():
-                cumsum += count
-                if cumsum > r:
-                    predictions.append(word)
-                    current_trigram = (current_trigram[1], word)
-                    break
-        
-        # Add personalized suggestions to the mix
+        # Add personalized suggestions to the mix if available
         if personalized_suggestions and isinstance(personalized_suggestions, list):
             return personalized_suggestions[:num_words]
         
-        return ["the", "and", "but", "or", "so"]  # Default fallback
+        return filtered_predictions[:num_words]
 
     async def predict_advanced(self, text: str, num_words: int = 5, user_id: str = None) -> List[str]:
         """Advanced prediction using GPT-3.5 Turbo with user patterns."""
