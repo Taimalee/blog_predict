@@ -35,6 +35,8 @@ wheels/
 *.egg
 venv/
 ENV/
+backend/data/ngram.json
+*.ngram
 
 # Node
 node_modules/
