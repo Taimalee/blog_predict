@@ -15,6 +15,8 @@ const Editor = () => {
   const [isAutoCompleteEnabled, setIsAutoCompleteEnabled] = useState(true);
   const [isSpellCheckEnabled, setIsSpellCheckEnabled] = useState(true);
   const [isAdvancedModel, setIsAdvancedModel] = useState(true);
+  const [isVoiceInputEnabled, setIsVoiceInputEnabled] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
@@ -23,6 +25,7 @@ const Editor = () => {
   const editorRef = useRef(null);
   const suggestionsRef = useRef(null);
   const profileMenuRef = useRef(null);
+  const recognitionRef = useRef(null);
   const { id: postId } = useParams(); // Get post ID from URL if editing
 
   const fontFamilies = [
@@ -408,6 +411,56 @@ const Editor = () => {
     };
   }, [content]);
 
+  // Setup speech recognition
+  useEffect(() => {
+    if (!('webkitSpeechRecognition' in window)) {
+      console.warn('Speech recognition not supported in this browser.');
+      return;
+    }
+
+    const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+      let interimTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript.trim();
+        if (event.results[i].isFinal) {
+          if (suggestions.includes(transcript)) {
+            insertSuggestion(transcript);
+          } else {
+            setContent((prevContent) => prevContent + ' ' + transcript);
+            debouncedPredict(content + ' ' + transcript);
+          }
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+    };
+
+    recognitionRef.current = recognition;
+  }, [debouncedPredict, suggestions]);
+
+  const handleVoiceInputToggle = () => {
+    setIsVoiceInputEnabled(!isVoiceInputEnabled);
+  };
+
+  const handleMicToggle = () => {
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+    }
+    setIsListening(!isListening);
+  };
+
   const handleLogout = async () => {
     try {
       await api.logout();
@@ -689,6 +742,76 @@ const Editor = () => {
               </button>
             </div>
 
+            {activeTab === 'predictions' && (
+              <>
+                {/* Advanced Model Toggle */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-base font-medium">Advanced GPT Model</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={isAdvancedModel}
+                        onChange={(e) => setIsAdvancedModel(e.target.checked)}
+                      />
+                      <div className="w-[52px] h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all"></div>
+                    </label>
+                  </div>
+                  <p className="text-sm text-gray-500">Use our advanced model for better predictions</p>
+                </div>
+
+                {/* Auto-complete Toggle */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-base font-medium">Predictions</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={isAutoCompleteEnabled}
+                        onChange={(e) => setIsAutoCompleteEnabled(e.target.checked)}
+                      />
+                      <div className="w-[52px] h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all"></div>
+                    </label>
+                  </div>
+                  <p className="text-sm text-gray-500">Automatically predict words</p>
+                </div>
+
+                {/* Voice Input Toggle */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-base font-medium">Voice Input</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={isVoiceInputEnabled}
+                        onChange={handleVoiceInputToggle}
+                      />
+                      <div className="w-[52px] h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all"></div>
+                    </label>
+                  </div>
+                  <p className="text-sm text-gray-500">Enable voice input for predictions</p>
+                  
+                  {/* Voice Input Button */}
+                  {isVoiceInputEnabled && (
+                    <button 
+                      onClick={handleMicToggle}
+                      className={`mt-2 flex items-center gap-2 px-4 py-2 ${
+                        isListening ? 'bg-red-500' : 'bg-gray-200'
+                      } text-white rounded-md hover:bg-gray-300 w-full justify-center`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 1v11m0 0a4 4 0 01-4-4V5a4 4 0 018 0v3a4 4 0 01-4 4zm0 0v4m0 4h-4m4 0h4" />
+                      </svg>
+                      {isListening ? 'Stop Listening' : 'Start Listening'}
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+
             {activeTab === 'settings' && (
               <div className="space-y-8">
                 {/* Font Size Control */}
@@ -831,43 +954,6 @@ const Editor = () => {
                   </div>
                 </div>
               </div>
-            )}
-
-            {activeTab === 'predictions' && (
-              <>
-                {/* Predictions Content */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-base font-medium">Advanced GPT Model</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer" 
-                        checked={isAdvancedModel}
-                        onChange={(e) => setIsAdvancedModel(e.target.checked)}
-                      />
-                      <div className="w-[52px] h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all"></div>
-                    </label>
-                  </div>
-                  <p className="text-sm text-gray-500">Use our advanced model for better predictions</p>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-base font-medium">Predictions</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer" 
-                        checked={isAutoCompleteEnabled}
-                        onChange={(e) => setIsAutoCompleteEnabled(e.target.checked)}
-                      />
-                      <div className="w-[52px] h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all"></div>
-                    </label>
-                  </div>
-                  <p className="text-sm text-gray-500">Automatically predict words</p>
-                </div>
-              </>
             )}
           </div>
         </div>
