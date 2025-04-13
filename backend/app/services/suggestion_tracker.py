@@ -43,4 +43,7 @@ class SuggestionTrackerService:
             self.db.add(stats)
             self.db.commit()
 
-        return stats 
+        return stats
+
+# Create a singleton instance of the service
+suggestion_tracker = SuggestionTrackerService() 
