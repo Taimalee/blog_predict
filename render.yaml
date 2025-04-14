@@ -1,9 +1,10 @@
 services:
   - type: web
     name: predict-api
-    runtime: python3.9
+    runtime: python3.11
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: gunicorn wsgi:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
     plan: free # Specify free tier
     envVars:
       - key: DATABASE_URL
@@ -14,10 +15,13 @@ services:
         generateValue: true
       - key: OPENAI_API_KEY
         sync: false
+      - key: PYTHONPATH
+        value: .
 
   - type: web
     name: predict-frontend
     runtime: node
+    rootDir: frontend
     buildCommand: npm install && npm run build
     startCommand: npm start
     plan: free # Specify free tier
@@ -26,6 +30,6 @@ services:
         value: https://predict-api.onrender.com
 
 databases:
-  - name: predict
+  - name: predict-db
     databaseName: predict_05qi
     plan: free # Specify free tier
