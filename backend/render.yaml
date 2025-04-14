@@ -1,13 +1,33 @@
 services:
   - type: web
-    name: blogpredict-api
-    runtime: python3.9
+    name: predict-api
+    runtime: python3.11
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+    plan: free
     envVars:
       - key: DATABASE_URL
-        value: postgresql://predict:dpg-cvu2o2ruibrs73eht5t0-a@dpg-cvu2o2ruibrs73eht5t0-a:5432/predict_05qi
+        fromDatabase:
+          name: predict-db
+          property: connectionString
       - key: SECRET_KEY
         generateValue: true
       - key: OPENAI_API_KEY
-        sync: false 
+        sync: false
+
+  - type: web
+    name: predict-frontend
+    runtime: node
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://predict-api.onrender.com
+
+databases:
+  - name: predict-db
+    databaseName: predict_05qi
+    plan: free
