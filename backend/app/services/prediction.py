@@ -59,6 +59,10 @@ class PredictionService:
     def predict_basic(self, text: str, num_words: int = 5, user_id: str = None) -> List[str]:
         """Basic prediction using n-gram model with user patterns."""
         try:
+            # Check if text is empty or too short
+            if not text or len(text.strip().split()) < 2:
+                return []
+
             # Get user patterns if user_id is provided
             user_patterns = None
             if user_id:
@@ -72,6 +76,10 @@ class PredictionService:
             
             # Get n-gram predictions with expanded context window
             ngram_model = self._get_ngram_model()
+            if not ngram_model._is_loaded():
+                print("NGram model not loaded")
+                return []
+
             predictions = ngram_model.predict(text, num_words, context_window=4)
             
             # Immediately unload the model after prediction
