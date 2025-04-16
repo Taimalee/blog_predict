@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import simple, users, predict, posts
+from app.api.v1.endpoints import simple, users, predict, posts, login
 
 api_router = APIRouter()
 
@@ -8,6 +8,9 @@ api_router.include_router(simple.router, tags=["simple"])
 
 # Include the user endpoints
 api_router.include_router(users.router, tags=["users"])
+
+# Include the login endpoints
+api_router.include_router(login.router, tags=["auth"])
 
 # Include the prediction endpoints
 api_router.include_router(predict.router, prefix="/predict", tags=["predict"])

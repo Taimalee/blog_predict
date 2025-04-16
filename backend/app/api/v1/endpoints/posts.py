@@ -1,29 +1,33 @@
-from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Any, List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from uuid import UUID
 from pydantic import BaseModel
 from datetime import datetime
 
-from app import crud, schemas
+from app import crud
 from app.api import deps
-from app.models.user import User
 from app.models.post import Post
 
 router = APIRouter()
 
-class DraftPostCreate(BaseModel):
+class PostCreate(BaseModel):
     user_id: UUID
-    title: str = "Untitled Post"
-    content: str = ""
+    title: str
+    content: str
     status: str = "draft"
 
-@router.get("/drafts/{user_id}", response_model=List[schemas.Post])
+class PostUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    status: Optional[str] = None
+
+@router.get("/drafts/{user_id}")
 def get_user_drafts(
     user_id: UUID,
     db: Session = Depends(deps.get_db),
     limit: int = 4
-) -> Any:
+) -> List[dict]:
     """
     Get most recent draft posts for a specific user.
     Limited to 4 posts for the Recent Drafts section.
@@ -32,13 +36,19 @@ def get_user_drafts(
         Post.user_id == user_id,
         Post.status == 'draft'
     ).order_by(Post.created_at.desc()).limit(limit).all()
-    return drafts
+    return [{
+        "id": str(post.id),
+        "title": post.title,
+        "content": post.content,
+        "status": post.status,
+        "created_at": post.created_at.isoformat()
+    } for post in drafts]
 
 @router.get("/stats/{user_id}")
 def get_user_stats(
     user_id: UUID,
     db: Session = Depends(deps.get_db)
-) -> Any:
+) -> dict:
     """
     Get user's writing stats including total words, drafts count, and published count.
     """
@@ -51,120 +61,113 @@ def get_user_stats(
     total_words = sum(len(post.content.split()) for post in posts)
     
     return {
-        "drafts": drafts,
-        "published": published,
-        "words": total_words
+        "total_words": total_words,
+        "drafts_count": drafts,
+        "published_count": published
     }
 
-@router.post("/draft", response_model=schemas.Post)
+@router.post("/draft")
 def save_draft(
-    *,
-    db: Session = Depends(deps.get_db),
-    post_in: schemas.PostCreate
-) -> Any:
+    post_data: PostCreate = Body(...),
+    db: Session = Depends(deps.get_db)
+) -> dict:
     """
-    Save a new post (draft or published).
+    Save a new draft post.
     """
-    try:
-        # Create new post with provided status
-        db_post = Post(
-            user_id=post_in.user_id,
-            title=post_in.title,
-            content=post_in.content,
-            status=post_in.status  # Use the status from the request
-        )
-        db.add(db_post)
-        db.commit()
-        db.refresh(db_post)
-        return db_post
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+    post = crud.post.create(db, obj_in=post_data)
+    return {
+        "id": str(post.id),
+        "title": post.title,
+        "content": post.content,
+        "status": post.status,
+        "created_at": post.created_at.isoformat()
+    }
 
-@router.get("/", response_model=List[schemas.Post])
+@router.get("/")
 def read_posts(
     db: Session = Depends(deps.get_db),
     skip: int = 0,
-    limit: int = 100,
-    current_user: User = Depends(deps.get_current_active_user),
-) -> Any:
+    limit: int = 100
+) -> List[dict]:
     """
     Retrieve posts.
     """
-    posts = crud.post.get_by_user(
-        db=db, user_id=current_user.id, skip=skip, limit=limit
-    )
-    return posts
+    posts = crud.post.get_multi(db, skip=skip, limit=limit)
+    return [{
+        "id": str(post.id),
+        "title": post.title,
+        "content": post.content,
+        "status": post.status,
+        "created_at": post.created_at.isoformat()
+    } for post in posts]
 
-@router.post("/", response_model=schemas.Post)
+@router.post("/")
 def create_post(
-    *,
-    db: Session = Depends(deps.get_db),
-    post_in: schemas.PostCreate,
-    current_user: User = Depends(deps.get_current_active_user),
-) -> Any:
+    post_data: PostCreate = Body(...),
+    db: Session = Depends(deps.get_db)
+) -> dict:
     """
     Create new post.
     """
-    post = crud.post.create_with_owner(
-        db=db, obj_in=post_in, owner_id=current_user.id
-    )
-    return post
+    post = crud.post.create(db, obj_in=post_data)
+    return {
+        "id": str(post.id),
+        "title": post.title,
+        "content": post.content,
+        "status": post.status,
+        "created_at": post.created_at.isoformat()
+    }
 
-@router.put("/{id}", response_model=schemas.Post)
+@router.put("/{id}")
 def update_post(
-    *,
-    db: Session = Depends(deps.get_db),
-    id: int,
-    post_in: schemas.PostUpdate
-) -> Any:
+    id: UUID,
+    post_data: PostUpdate = Body(...),
+    db: Session = Depends(deps.get_db)
+) -> dict:
     """
     Update a post.
     """
-    post = db.query(Post).filter(Post.id == id).first()
+    post = crud.post.get(db, id=id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    
-    # Update post fields
-    if hasattr(post_in, "title"):
-        post.title = post_in.title
-    if hasattr(post_in, "content"):
-        post.content = post_in.content
-    if hasattr(post_in, "status"):
-        post.status = post_in.status
-    
-    db.commit()
-    db.refresh(post)
-    return post
+    post = crud.post.update(db, db_obj=post, obj_in=post_data)
+    return {
+        "id": str(post.id),
+        "title": post.title,
+        "content": post.content,
+        "status": post.status,
+        "created_at": post.created_at.isoformat()
+    }
 
-@router.get("/{id}", response_model=schemas.Post)
+@router.get("/{id}")
 def read_post(
-    *,
-    db: Session = Depends(deps.get_db),
-    id: int,
-) -> Any:
+    id: UUID,
+    db: Session = Depends(deps.get_db)
+) -> dict:
     """
     Get post by ID.
     """
-    post = db.query(Post).filter(Post.id == id).first()
+    post = crud.post.get(db, id=id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    return post
+    return {
+        "id": str(post.id),
+        "title": post.title,
+        "content": post.content,
+        "status": post.status,
+        "created_at": post.created_at.isoformat()
+    }
 
-@router.delete("/{id}", response_model=schemas.Post)
+@router.delete("/{id}")
 def delete_post(
-    *,
-    db: Session = Depends(deps.get_db),
-    id: int,
-    current_user: User = Depends(deps.get_current_active_user),
-) -> Any:
+    id: UUID,
+    db: Session = Depends(deps.get_db)
+) -> dict:
     """
     Delete a post.
     """
-    post = crud.post.get(db=db, id=id)
+    post = crud.post.get(db, id=id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    if not post.user_id == current_user.id:
-        raise HTTPException(status_code=400, detail="Not enough permissions")
-    post = crud.post.remove(db=db, id=id)
-    return post 
+    crud.post.remove(db, id=id)
+    return {"message": "Post deleted successfully"} 

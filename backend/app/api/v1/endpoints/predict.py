@@ -1,5 +1,5 @@
 from typing import Any, List, Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel
 from app.services.prediction import PredictionService
 from app.schemas.prediction import PredictionRequest, SpellCheckRequest, SpellCheckResponse
@@ -28,8 +28,8 @@ class SuggestionStats(BaseModel):
     acceptedCount: int
     acceptanceRate: float
 
-@router.post("/spellcheck", response_model=SpellCheckResponse)
-async def spellcheck(request: SpellCheckRequest) -> SpellCheckResponse:
+@router.post("/spellcheck")
+async def spellcheck(request: SpellCheckRequest = Body(...)) -> dict:
     """
     Check and correct spelling in the given text using GPT-3.5 Turbo.
     """
@@ -40,7 +40,7 @@ async def spellcheck(request: SpellCheckRequest) -> SpellCheckResponse:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/basic")
-async def predict_basic(request: PredictionRequest) -> List[str]:
+async def predict_basic(request: PredictionRequest = Body(...)) -> List[str]:
     try:
         if not request.user_id:
             raise HTTPException(status_code=400, detail="User ID is required")
@@ -53,11 +53,11 @@ async def predict_basic(request: PredictionRequest) -> List[str]:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/advanced")
-async def predict_advanced(request: PredictionRequest) -> List[str]:
+async def predict_advanced(request: PredictionRequest = Body(...)) -> List[str]:
     try:
         if not request.user_id:
             raise HTTPException(status_code=400, detail="User ID is required")
-        return await prediction_service.predict_advanced(
+        return prediction_service.predict_advanced(
             text=request.text,
             num_words=request.num_words,
             user_id=request.user_id
@@ -66,22 +66,25 @@ async def predict_advanced(request: PredictionRequest) -> List[str]:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/track")
-async def track_suggestion(request: SuggestionTrackRequest):
-    """Track when suggestions are shown or accepted."""
+async def track_suggestion(request: SuggestionTrackRequest = Body(...)) -> dict:
     try:
-        if request.shown is not None:
-            suggestion_tracker.track_shown(request.user_id, request.shown)
-        if request.accepted is not None:
-            suggestion_tracker.track_accepted(request.user_id)
-        return {"status": "success"}
+        await suggestion_tracker.track(
+            user_id=request.user_id,
+            shown=request.shown,
+            accepted=request.accepted
+        )
+        return {"message": "Suggestion tracked successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/stats/{user_id}", response_model=SuggestionStats)
-async def get_suggestion_stats(user_id: str):
-    """Get suggestion statistics for a user."""
+@router.get("/stats/{user_id}")
+async def get_suggestion_stats(user_id: str) -> dict:
     try:
-        stats = suggestion_tracker.get_stats(user_id)
-        return stats
+        stats = await suggestion_tracker.get_stats(user_id)
+        return {
+            "shownCount": stats.shownCount,
+            "acceptedCount": stats.acceptedCount,
+            "acceptanceRate": stats.acceptanceRate
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 
