@@ -162,6 +162,7 @@ const Editor = () => {
   // Debounced spell check function
   const debouncedSpellCheck = useCallback(
     debounce(async (text) => {
+      console.log('Spell check triggered, enabled:', isSpellCheckEnabled);
       if (!isSpellCheckEnabled) return;
       
       try {
@@ -176,6 +177,13 @@ const Editor = () => {
         const currentWordIndex = words.length - 1;
         const lastWord = currentWordIndex > 0 ? words[currentWordIndex - 1] : '';
         
+        console.log('Spell check debug:', {
+          lastWord,
+          currentWordIndex,
+          words,
+          textBeforeCursor
+        });
+        
         // Skip if the last word is empty or contains special characters
         if (!lastWord || !/^[a-zA-Z]+$/.test(lastWord) || 
             lastWord.toLowerCase().includes('fix') || 
@@ -183,10 +191,21 @@ const Editor = () => {
             lastWord.toLowerCase().includes('grammar') ||
             lastWord.toLowerCase().includes('error') ||
             lastWord.toLowerCase().includes('corrected')) {
+          console.log('Spell check skipped due to conditions:', {
+            isEmpty: !lastWord,
+            isNotAlpha: !/^[a-zA-Z]+$/.test(lastWord),
+            containsFix: lastWord.toLowerCase().includes('fix'),
+            containsSpell: lastWord.toLowerCase().includes('spell'),
+            containsGrammar: lastWord.toLowerCase().includes('grammar'),
+            containsError: lastWord.toLowerCase().includes('error'),
+            containsCorrected: lastWord.toLowerCase().includes('corrected')
+          });
           return;
         }
         
+        console.log('Making spell check API call for word:', lastWord);
         const result = await api.spellCheck(lastWord);
+        console.log('Spell check API response:', result);
         
         if (result.corrected && 
             result.corrected !== lastWord && 
