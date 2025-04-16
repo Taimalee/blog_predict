@@ -313,7 +313,52 @@ const Editor = () => {
     setSelectedIndex(index);
   };
 
-  // Handle editor input
+  // Add the calculateCursorPosition function before handleInput
+  const calculateCursorPosition = (textarea, content, cursorPos) => {
+    const rect = textarea.getBoundingClientRect();
+    const textBeforeCursor = content.slice(0, cursorPos);
+    const lines = textBeforeCursor.split('\n');
+    const currentLine = lines.length - 1;
+    const currentLineText = lines[currentLine];
+    
+    // Create a hidden div to measure text accurately
+    const div = document.createElement('div');
+    div.style.font = window.getComputedStyle(textarea).font;
+    div.style.whiteSpace = 'pre-wrap';
+    div.style.wordWrap = 'break-word';
+    div.style.position = 'absolute';
+    div.style.visibility = 'hidden';
+    div.style.width = `${textarea.clientWidth}px`; // Match textarea width
+    
+    // Add the current line text
+    div.textContent = currentLineText;
+    document.body.appendChild(div);
+    
+    // Calculate the cursor position
+    const range = document.createRange();
+    const textNode = div.firstChild || div;
+    const offset = cursorPos - (textBeforeCursor.length - currentLineText.length);
+    range.setStart(textNode, Math.min(offset, currentLineText.length));
+    const rect2 = range.getBoundingClientRect();
+    
+    document.body.removeChild(div);
+    
+    // Calculate position relative to textarea
+    const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
+    const scrollTop = textarea.scrollTop;
+    const scrollLeft = textarea.scrollLeft;
+    
+    const x = rect2.left - rect.left + rect.x - scrollLeft;
+    const y = rect.top + (currentLine * lineHeight) - scrollTop;
+    
+    // Ensure x position stays within textarea bounds
+    const maxX = rect.width - 200; // 200px is minWidth of suggestions popup
+    const boundedX = Math.min(Math.max(0, x), maxX);
+    
+    return { x: boundedX, y };
+  };
+
+  // Update handleInput function
   const handleInput = (e) => {
     const newContent = e.target.value;
     setContent(newContent);
@@ -321,44 +366,11 @@ const Editor = () => {
     // Update cursor position
     const textarea = editorRef.current;
     if (textarea) {
-      const rect = textarea.getBoundingClientRect();
       const cursorPos = textarea.selectionStart;
-      const textBeforeCursor = newContent.slice(0, cursorPos);
-      const lines = textBeforeCursor.split('\n');
-      const currentLine = lines.length - 1;
-      const currentLineText = lines[currentLine];
+      const position = calculateCursorPosition(textarea, newContent, cursorPos);
+      setCursorPosition(position);
       
-      // Find the start of the current word
-      let startPos = cursorPos;
-      while (startPos > 0 && newContent[startPos - 1] !== ' ' && newContent[startPos - 1] !== '\n') {
-        startPos--;
-      }
-      
-      // Calculate position based on the current word position
-      const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
-      const scrollTop = textarea.scrollTop;
-      const scrollLeft = textarea.scrollLeft;
-      
-      // Create a temporary span to measure text width accurately
-      const span = document.createElement('span');
-      span.style.font = window.getComputedStyle(textarea).font;
-      span.style.visibility = 'hidden';
-      span.style.position = 'absolute';
-      span.style.whiteSpace = 'pre';
-      
-      // Get the text up to the start of the current word
-      const textToCurrentWord = currentLineText.slice(0, startPos - (cursorPos - currentLineText.length));
-      span.textContent = textToCurrentWord;
-      document.body.appendChild(span);
-      
-      // Calculate the x position based on the width of text before the current word
-      const x = rect.left + span.offsetWidth - scrollLeft;
-      const y = rect.top + (currentLine * lineHeight) - scrollTop;
-      
-      document.body.removeChild(span);
-      setCursorPosition({ x, y });
-      
-      console.log('Cursor position:', { x, y });
+      console.log('Cursor position:', position);
       console.log('Suggestions state:', suggestions);
     }
     
@@ -375,48 +387,15 @@ const Editor = () => {
     }
   };
 
-  // Add cursor position update on selection change
+  // Update the selection change effect
   useEffect(() => {
     const textarea = editorRef.current;
     if (!textarea) return;
 
     const handleSelectionChange = () => {
-      const rect = textarea.getBoundingClientRect();
       const cursorPos = textarea.selectionStart;
-      const textBeforeCursor = content.slice(0, cursorPos);
-      const lines = textBeforeCursor.split('\n');
-      const currentLine = lines.length - 1;
-      const currentLineText = lines[currentLine];
-      
-      // Find the start of the current word
-      let startPos = cursorPos;
-      while (startPos > 0 && content[startPos - 1] !== ' ' && content[startPos - 1] !== '\n') {
-        startPos--;
-      }
-      
-      // Calculate position based on the current word position
-      const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
-      const scrollTop = textarea.scrollTop;
-      const scrollLeft = textarea.scrollLeft;
-      
-      // Create a temporary span to measure text width accurately
-      const span = document.createElement('span');
-      span.style.font = window.getComputedStyle(textarea).font;
-      span.style.visibility = 'hidden';
-      span.style.position = 'absolute';
-      span.style.whiteSpace = 'pre';
-      
-      // Get the text up to the start of the current word
-      const textToCurrentWord = currentLineText.slice(0, startPos - (cursorPos - currentLineText.length));
-      span.textContent = textToCurrentWord;
-      document.body.appendChild(span);
-      
-      // Calculate the x position based on the width of text before the current word
-      const x = rect.left + span.offsetWidth - scrollLeft;
-      const y = rect.top + (currentLine * lineHeight) - scrollTop;
-      
-      document.body.removeChild(span);
-      setCursorPosition({ x, y });
+      const position = calculateCursorPosition(textarea, content, cursorPos);
+      setCursorPosition(position);
     };
 
     textarea.addEventListener('select', handleSelectionChange);
@@ -741,7 +720,7 @@ const Editor = () => {
                 className="fixed bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-[1000]"
                 style={{
                   left: `${cursorPosition.x}px`,
-                  top: `${cursorPosition.y + 45}px`,
+                  top: `${cursorPosition.y + 45}px`, // Reduced from 45px to 25px
                   minWidth: '200px',
                   maxWidth: '300px',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
