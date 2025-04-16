@@ -338,6 +338,9 @@ const Editor = () => {
       
       document.body.removeChild(span);
       setCursorPosition({ x, y });
+      
+      console.log('Cursor position:', { x, y });
+      console.log('Suggestions state:', suggestions);
     }
     
     // Handle predictions if content exists and auto-complete is enabled
@@ -675,10 +678,13 @@ const Editor = () => {
                 className="fixed bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-[1000]"
                 style={{
                   left: `${cursorPosition.x}px`,
-                  top: `${cursorPosition.y + 45}px`,
+                  top: `${cursorPosition.y + 25}px`,
                   minWidth: '200px',
                   maxWidth: '300px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                  transform: 'translateY(0)',
+                  opacity: 1,
+                  transition: 'opacity 0.2s ease-in-out'
                 }}
               >
                 {suggestions.map((suggestion, index) => (
@@ -690,7 +696,7 @@ const Editor = () => {
                     onClick={() => handleSuggestionClick(index)}
                     onMouseEnter={() => handleSuggestionHover(index)}
                   >
-                    {suggestion}
+                    <span className="text-gray-800">{suggestion}</span>
                   </div>
                 ))}
               </div>
