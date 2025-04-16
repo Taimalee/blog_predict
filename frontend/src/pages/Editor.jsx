@@ -381,9 +381,21 @@ const Editor = () => {
       setSuggestions([]);
     }
 
-    // Handle spell check independently if content exists and spell check is enabled
-    if (newContent.trim() && isSpellCheckEnabled) {
-      debouncedSpellCheck(newContent);
+    // Only check spelling when space is pressed after typing a word
+    if (isSpellCheckEnabled && e.nativeEvent.inputType === 'insertText' && e.nativeEvent.data === ' ') {
+      const textBeforeCursor = newContent.slice(0, textarea.selectionStart - 1); // -1 to exclude the space
+      const words = textBeforeCursor.split(/\s+/);
+      const lastWord = words[words.length - 1];
+      
+      // Skip if the last word is empty or contains special characters
+      if (lastWord && /^[a-zA-Z]+$/.test(lastWord) && 
+          !lastWord.toLowerCase().includes('fix') && 
+          !lastWord.toLowerCase().includes('spell') && 
+          !lastWord.toLowerCase().includes('grammar') &&
+          !lastWord.toLowerCase().includes('error') &&
+          !lastWord.toLowerCase().includes('corrected')) {
+        debouncedSpellCheck(lastWord);
+      }
     }
   };
 

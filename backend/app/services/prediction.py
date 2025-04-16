@@ -12,6 +12,7 @@ import re
 import gc
 import openai
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -253,29 +254,64 @@ Guidelines:
             logger.error(f"Error in GPT prediction: {e}")
             return self.predict_basic(text, num_words, user_id)
 
-    async def spellcheck_text(self, text: str) -> str:
-        """Check spelling only (no grammar) in the given text using GPT-3.5 Turbo."""
+    async def spellcheck_text(self, text: str) -> dict:
+        """Check spelling in the given text using GPT-3.5 Turbo."""
         try:
             # Only process single words
             if not text or ' ' in text or not text.strip().isalpha():
-                return text
+                return {"corrected": text, "confidence": 0.0}
+
+            # Skip common words and short words
+            if len(text) < 4 or text.lower() in {
+                'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have',
+                'i', 'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at'
+            }:
+                return {"corrected": text, "confidence": 1.0}
+
+            # Skip proper nouns (words starting with capital letters)
+            if text[0].isupper():
+                return {"corrected": text, "confidence": 1.0}
+
+            system_prompt = """You are a precise spell checker. Your task is to:
+1. If the word is spelled correctly, return it unchanged with confidence 1.0
+2. If the word is misspelled, return the corrected word with a confidence score between 0.0 and 1.0
+3. Preserve the original case of the word
+4. Only correct obvious spelling mistakes
+5. Do not change proper nouns or technical terms
+6. Return the word and confidence score in JSON format: {"word": "corrected_word", "confidence": 0.95}
+
+Examples:
+Input: "teh"
+Output: {"word": "the", "confidence": 0.98}
+
+Input: "Python"
+Output: {"word": "Python", "confidence": 1.0}
+
+Input: "recieved"
+Output: {"word": "received", "confidence": 0.95}
+
+Input: "Github"
+Output: {"word": "Github", "confidence": 1.0}"""
 
             response = await self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "You are a basic spell checker. If the word is spelled correctly, return it unchanged. If it's misspelled, return ONLY the corrected word. Do not consider grammar or context. Do not add any explanations or additional text."},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": text}
                 ],
                 max_tokens=50,
-                temperature=0.3
+                temperature=0.1  # Lower temperature for more consistent results
             )
-            corrected = response.choices[0].message.content.strip()
-            
-            # Only accept pure word responses
-            if not corrected or not corrected.isalpha():
-                return text
-                
-            return corrected
+
+            try:
+                result = json.loads(response.choices[0].message.content.strip())
+                return {
+                    "corrected": result["word"],
+                    "confidence": float(result["confidence"])
+                }
+            except (json.JSONDecodeError, KeyError):
+                return {"corrected": text, "confidence": 0.0}
+
         except Exception as e:
             print(f"Error in spellcheck: {e}")
-            return text 
+            return {"corrected": text, "confidence": 0.0} 

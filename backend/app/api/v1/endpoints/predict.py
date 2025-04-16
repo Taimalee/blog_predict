@@ -31,10 +31,11 @@ class SuggestionStats(BaseModel):
 async def spellcheck(request: SpellCheckRequest = Body(...)) -> dict:
     """
     Check and correct spelling in the given text using GPT-3.5 Turbo.
+    Returns a dictionary with the corrected word and confidence score.
     """
     try:
-        corrected = await prediction_service.spellcheck_text(request.text)
-        return {"corrected": corrected}
+        result = await prediction_service.spellcheck_text(request.text)
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
