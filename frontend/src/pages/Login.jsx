@@ -19,8 +19,8 @@ const Login = () => {
         // Login flow
         const response = await api.login({ email, password });
         console.log('Login response:', response);
-        if (response && response.id) {
-          localStorage.setItem('userId', response.id);
+        if (response && response.user_id) {
+          localStorage.setItem('userId', response.user_id);
           localStorage.setItem('userEmail', email);
           console.log('Navigating to dashboard...');
           navigate('/dashboard');
@@ -31,8 +31,8 @@ const Login = () => {
         // Signup flow
         const response = await api.signup({ email, password });
         console.log('Signup response:', response);
-        if (response && response.id) {
-          localStorage.setItem('userId', response.id);
+        if (response && response.user_id) {
+          localStorage.setItem('userId', response.user_id);
           localStorage.setItem('userEmail', email);
           console.log('Navigating to dashboard...');
           navigate('/dashboard');
@@ -42,7 +42,7 @@ const Login = () => {
       }
     } catch (err) {
       console.error('Auth error:', err);
-      setError(err.response?.data?.detail || 'An error occurred during authentication');
+      setError(err.message || 'An error occurred during authentication');
     }
   };
 
