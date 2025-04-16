@@ -3,11 +3,10 @@ from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel
 from app.services.prediction import PredictionService
 from app.schemas.prediction import PredictionRequest, SpellCheckRequest, SpellCheckResponse
-from app.services.suggestion_tracker import SuggestionTrackerService
+from app.services.suggestion_tracker import suggestion_tracker
 
 router = APIRouter()
 prediction_service = PredictionService()
-suggestion_tracker = SuggestionTrackerService()
 
 class PredictionRequest(BaseModel):
     text: str
@@ -67,25 +66,19 @@ async def predict_advanced(request: PredictionRequest = Body(...)) -> List[str]:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/track")
-async def track_suggestion(request: SuggestionTrackRequest = Body(...)) -> dict:
+def track_suggestion(request: SuggestionTrackRequest = Body(...)) -> dict:
     try:
-        await suggestion_tracker.track(
-            user_id=request.user_id,
-            shown=request.shown,
-            accepted=request.accepted
-        )
+        if request.shown is not None:
+            suggestion_tracker.track_shown(request.user_id, request.shown)
+        if request.accepted is not None and request.accepted:
+            suggestion_tracker.track_accepted(request.user_id)
         return {"message": "Suggestion tracked successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/stats/{user_id}")
-async def get_suggestion_stats(user_id: str) -> dict:
+def get_suggestion_stats(user_id: str) -> dict:
     try:
-        stats = await suggestion_tracker.get_stats(user_id)
-        return {
-            "shownCount": stats.shownCount,
-            "acceptedCount": stats.acceptedCount,
-            "acceptanceRate": stats.acceptanceRate
-        }
+        return suggestion_tracker.get_stats(user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 
