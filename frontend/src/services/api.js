@@ -2,7 +2,11 @@ const API_URL = process.env.REACT_APP_API_URL || 'https://blogpredict-api.onrend
 
 const getHeaders = () => {
   return {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
   };
 };
 
@@ -133,6 +137,7 @@ export const api = {
     const response = await fetch(`${API_URL}/api/v1/predict/advanced`, {
       method: 'POST',
       headers: getHeaders(),
+      credentials: 'include',
       body: JSON.stringify({ 
         text, 
         num_words: numWords, 

@@ -12,11 +12,22 @@ app = FastAPI(
 # Set up CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins in development
+    allow_origins=[
+        "https://predict-frontend.onrender.com",
+        "http://localhost:3000"
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"]
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "Access-Control-Allow-Origin",
+        "Access-Control-Allow-Methods",
+        "Access-Control-Allow-Headers"
+    ],
+    expose_headers=["*"],
+    max_age=600  # Cache preflight requests for 10 minutes
 )
 
 # Include API router
