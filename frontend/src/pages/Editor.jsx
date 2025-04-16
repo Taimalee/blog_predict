@@ -462,22 +462,66 @@ const Editor = () => {
 
     recognition.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
+      // Stop recognition and update state on error
+      recognition.stop();
+      setIsListening(false);
+    };
+
+    // Add onend handler
+    recognition.onend = () => {
+      // Update state when recognition ends
+      setIsListening(false);
     };
 
     recognitionRef.current = recognition;
+
+    // Add cleanup function
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (err) {
+          console.error('Error stopping recognition:', err);
+        }
+      }
+    };
   }, [debouncedPredict, suggestions]);
 
   const handleVoiceInputToggle = () => {
+    // If turning off voice input, stop recognition
+    if (isVoiceInputEnabled && isListening) {
+      try {
+        recognitionRef.current?.stop();
+      } catch (err) {
+        console.error('Error stopping recognition:', err);
+      }
+      setIsListening(false);
+    }
     setIsVoiceInputEnabled(!isVoiceInputEnabled);
   };
 
   const handleMicToggle = () => {
-    if (isListening) {
-      recognitionRef.current.stop();
-    } else {
-      recognitionRef.current.start();
+    if (!recognitionRef.current) {
+      console.warn('Speech recognition not initialized');
+      return;
     }
-    setIsListening(!isListening);
+
+    if (isListening) {
+      try {
+        recognitionRef.current.stop();
+        setIsListening(false);
+      } catch (err) {
+        console.error('Error stopping recognition:', err);
+        setIsListening(false);
+      }
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (err) {
+        console.error('Error starting recognition:', err);
+      }
+    }
   };
 
   const handleLogout = async () => {
