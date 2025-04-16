@@ -116,13 +116,14 @@ const Editor = () => {
         if (wordsBeforeCursor.length >= 2 && currentWord.length > 0) {
           // Choose the prediction function based on the toggle state
           const predictionFunction = isAdvancedModel ? api.predictAdvanced : api.predictBasic;
+          console.log('Making prediction request...');
           const predictions = await predictionFunction(textBeforeCursor, 3);
           console.log('API predictions:', predictions);
           
           if (predictions && predictions.length > 0) {
             // For single-word predictions, just use them directly
             const suggestions = predictions.map(pred => pred);
-            console.log('Final suggestions:', suggestions);
+            console.log('Setting suggestions:', suggestions);
             setSuggestions(suggestions);
             setSelectedIndex(0);
             
@@ -133,9 +134,11 @@ const Editor = () => {
               console.error('Error tracking shown suggestions:', error);
             }
           } else {
+            console.log('No predictions received');
             setSuggestions([]);
           }
         } else {
+          console.log('Not enough words for prediction');
           setSuggestions([]);
         }
       } catch (error) {
@@ -675,10 +678,13 @@ const Editor = () => {
                 className="fixed bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-[1000]"
                 style={{
                   left: `${cursorPosition.x}px`,
-                  top: `${cursorPosition.y + 45}px`,
+                  top: `${cursorPosition.y + 25}px`,
                   minWidth: '200px',
                   maxWidth: '300px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                  transform: 'translateY(0)',
+                  opacity: 1,
+                  transition: 'opacity 0.2s ease-in-out'
                 }}
               >
                 {suggestions.map((suggestion, index) => (
@@ -690,7 +696,7 @@ const Editor = () => {
                     onClick={() => handleSuggestionClick(index)}
                     onMouseEnter={() => handleSuggestionHover(index)}
                   >
-                    {suggestion}
+                    <span className="text-gray-800">{suggestion}</span>
                   </div>
                 ))}
               </div>
