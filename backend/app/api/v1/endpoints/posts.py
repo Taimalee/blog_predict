@@ -141,17 +141,17 @@ def update_post(
 
 @router.get("/{id}")
 def read_post(
-    id: UUID,
+    id: int,
     db: Session = Depends(deps.get_db)
 ) -> dict:
     """
-    Get post by ID.
+    Get a single post by ID.
     """
     post = crud.post.get(db, id=id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     return {
-        "id": str(post.id),
+        "id": post.id,
         "title": post.title,
         "content": post.content,
         "status": post.status,
