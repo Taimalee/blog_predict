@@ -1,4 +1,4 @@
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 const getHeaders = () => {
   return {
@@ -17,7 +17,7 @@ const handleResponse = async (response) => {
 export const api = {
   // Auth
   signup: async ({ email, password }) => {
-    const response = await fetch(`${API_URL}/signup`, {
+    const response = await fetch(`${API_URL}/api/v1/signup`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ email, password }),
@@ -28,7 +28,7 @@ export const api = {
   },
 
   login: async ({ email, password }) => {
-    const response = await fetch(`${API_URL}/login`, {
+    const response = await fetch(`${API_URL}/api/v1/login`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ email, password }),
