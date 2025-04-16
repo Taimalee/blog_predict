@@ -4,7 +4,7 @@ services:
     runtime: python3.11
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn your_application:application --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+    startCommand: gunicorn your_application:application --workers 2 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120 --keep-alive 5 --max-requests 1000 --max-requests-jitter 50
     plan: free # Specify free tier
     envVars:
       - key: DATABASE_URL
@@ -17,6 +17,8 @@ services:
         sync: false
       - key: PYTHONPATH
         value: .
+      - key: PYTHONUNBUFFERED
+        value: "1"
 
   - type: web
     name: predict-frontend

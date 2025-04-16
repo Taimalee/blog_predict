@@ -9,27 +9,43 @@ from app.models.ngram_model import NGramModel
 from app.services.suggestion_tracker import suggestion_tracker
 import os
 import re
+import gc
 
 class PredictionService:
+    _instance = None
+    _ngram_model = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(PredictionService, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self):
-        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        self.ngram_model = NGramModel()
-        self.db = SessionLocal()
-        self.pattern_service = UserPatternService(self.db)
-        
-        # Load pre-trained model if exists
-        model_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'ngram_model.json')
-        if os.path.exists(model_path):
-            self.ngram_model.load(model_path)
+        if not hasattr(self, 'initialized'):
+            self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+            self.db = SessionLocal()
+            self.pattern_service = UserPatternService(self.db)
+            self.initialized = True
+
+    def _get_ngram_model(self):
+        if self._ngram_model is None:
+            self._ngram_model = NGramModel()
+            model_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'ngram_model.json')
+            if os.path.exists(model_path):
+                self._ngram_model.load(model_path)
+                # Force garbage collection after loading
+                gc.collect()
+        return self._ngram_model
 
     def train_ngram_model(self, text: str) -> None:
         """Train the n-gram model on input text."""
-        self.ngram_model.train(text)
+        ngram_model = self._get_ngram_model()
+        ngram_model.train(text)
         
         # Save the model
         model_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'ngram_model.json')
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
-        self.ngram_model.save(model_path)
+        ngram_model.save(model_path)
 
     def predict_basic(self, text: str, num_words: int = 5, user_id: str = None) -> List[str]:
         """Basic prediction using n-gram model with user patterns."""
@@ -45,7 +61,8 @@ class PredictionService:
                 user_patterns = None
         
         # Get n-gram predictions with expanded context window
-        predictions = self.ngram_model.predict(text, num_words, context_window=4)
+        ngram_model = self._get_ngram_model()
+        predictions = ngram_model.predict(text, num_words, context_window=4)
         
         # Filter out special tokens and duplicates
         filtered_predictions = []
@@ -147,32 +164,7 @@ Guidelines:
 1. Preserve the original writing style and tone.
 2. Provide natural, cohesive continuations that align with the context.
 3. Return ONLY the predicted words without explanations or additional formatting.
-
 """
-
-
-#             system_prompt = """You are a sophisticated AI writing assistant specialized in predicting the next words in blog posts.
-# Your task is to predict the next few words that would naturally follow in a piece of writing.
-
-# Here are examples of high-quality predictions for technology blogs:
-# Example 1: 
-# Input: "The integration of artificial intelligence into healthcare has"
-# Prediction: "revolutionized patient care and treatment outcomes"
-
-# Example 2:
-# Input: "Cloud computing offers businesses several advantages including"
-# Prediction: "scalability, cost-efficiency, and improved collaboration capabilities"
-
-# Example 3:
-# Input: "The future of remote work depends on"
-# Prediction: "effective communication tools and adaptive management strategies"
-
-# Follow these guidelines:
-# 1. Maintain the writing style and tone of the text
-# 2. Provide natural, coherent continuations
-# 3. Consider context and topic when making predictions
-# 4. Return ONLY the predicted words, no explanations or formatting
-# """
 
             # Add blog topic context
             user_prompt = f"Given the text: '{text}', predict the next {num_words} words."
@@ -188,13 +180,6 @@ Guidelines:
             user_prompt += """ Focus on crafting engaging and professional blog content that 
             appeals to a broad audience. Use versatile vocabulary that reflects contemporary trends 
             and diverse perspectives, ensuring clarity and reader interest."""
-
-
-#             # Add tech blog vocabulary context
-#             user_prompt += """ Focus on professional technology blog writing.
-# Use appropriate tech vocabulary that might include: development, application, framework, 
-# implementation, infrastructure, deployment, API, interface, functionality, algorithm, 
-# optimization, scalability, database, cloud computing, security, integration."""
             
             # Add user-specific writing style information
             if user_patterns and isinstance(user_patterns, dict):
