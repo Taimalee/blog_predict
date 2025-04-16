@@ -67,23 +67,27 @@ W-Rite Expedite is an intelligent writing assistant that helps writers and conte
 ## 🛠 Tech Stack
 
 ### Frontend
-- React with TypeScript
-- TailwindCSS for styling
+- React 18.2.0 with TypeScript
+- TailwindCSS 3.4.1 for styling
 - Modern, responsive UI components
+- React Router 6.21.1 for navigation
 
 ### Backend
-- FastAPI (Python)
+- FastAPI 0.104.1
 - Async-first architecture
 - RESTful API design
+- Uvicorn 0.24.0 for ASGI server
+- Gunicorn 21.2.0 for production
 
 ### Database
 - PostgreSQL
-- Efficient data storage and retrieval
-- Secure user data management
+- SQLAlchemy 2.0.23 for ORM
+- Asyncpg 0.29.0 for async database access
+- Alembic 1.12.1 for migrations
 
 ### AI/ML Models
 - N-gram models for basic prediction
-- GPT-3.5 Turbo for advanced contextual understanding
+- GPT-3.5 Turbo (via OpenAI API 1.3.5) for advanced contextual understanding
 - Hybrid prediction system for optimal results
 
 ## 📊 Database Structure
@@ -164,8 +168,11 @@ blog-predict/
 │   ├── public/        # Static files
 │   ├── node_modules/  # Dependencies
 │   ├── package.json   # Frontend dependencies and scripts
+│   ├── package-lock.json # Locked dependency versions
 │   ├── tailwind.config.js  # TailwindCSS configuration
-│   └── postcss.config.js   # PostCSS configuration
+│   ├── postcss.config.js   # PostCSS configuration
+│   ├── .env.production    # Production environment variables
+│   └── render.yaml        # Render deployment configuration
 ├── backend/           # FastAPI backend server
 │   ├── app/          # Main application code
 │   │   ├── api/      # API endpoints
@@ -175,9 +182,15 @@ blog-predict/
 │   ├── alembic/      # Database migrations
 │   ├── venv/         # Python virtual environment
 │   ├── requirements.txt  # Python dependencies
-│   └── .env         # Environment variables
+│   ├── wsgi.py       # WSGI entry point
+│   ├── Procfile      # Process file for deployment
+│   ├── render.yaml   # Render deployment configuration
+│   └── alembic.ini   # Alembic configuration
 ├── .git/             # Git repository
-└── .gitignore        # Git ignore rules
+├── .gitignore        # Git ignore rules
+├── .gitattributes    # Git attributes
+├── local_backup.sql  # Local database backup
+└── render.yaml       # Root deployment configuration
 ```
 
 ## 🧪 Getting Started
@@ -240,3 +253,40 @@ npm start
 3. Begin typing to see real-time word predictions
 4. Accept or ignore suggestions as needed
 5. Save your work or publish when ready
+
+## 🚀 Deployment
+
+### Prerequisites
+- Render account
+- PostgreSQL database
+- OpenAI API key
+
+### Deployment Steps
+1. Fork the repository
+2. Create a new Web Service on Render
+3. Connect your GitHub repository
+4. Configure environment variables:
+   - `DATABASE_URL`
+   - `SECRET_KEY`
+   - `OPENAI_API_KEY`
+5. Deploy the service
+
+The application uses Render's Blueprint feature for automated deployment of both frontend and backend services.
+
+### Environment Variables
+```bash
+# Backend
+DATABASE_URL=postgresql://user:password@host:port/database
+SECRET_KEY=your-secret-key
+OPENAI_API_KEY=your-openai-api-key
+
+# Frontend
+REACT_APP_API_URL=https://your-backend-url
+```
+
+### Database Migration
+```bash
+# After deployment
+cd backend
+alembic upgrade head
+```
