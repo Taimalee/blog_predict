@@ -116,7 +116,7 @@ const Editor = () => {
         if (wordsBeforeCursor.length >= 2 && currentWord.length > 0) {
           // Choose the prediction function based on the toggle state
           const predictionFunction = isAdvancedModel ? api.predictAdvanced : api.predictBasic;
-          const predictions = await predictionFunction(textBeforeCursor, 3);
+          const predictions = await predictionFunction(textBeforeCursor);
           console.log('API predictions:', predictions);
           
           if (predictions && predictions.length > 0) {
@@ -125,13 +125,6 @@ const Editor = () => {
             console.log('Final suggestions:', suggestions);
             setSuggestions(suggestions);
             setSelectedIndex(0);
-            
-            // Track shown suggestions
-            try {
-              await api.trackSuggestion({ shown: suggestions.length });
-            } catch (error) {
-              console.error('Error tracking shown suggestions:', error);
-            }
           } else {
             setSuggestions([]);
           }

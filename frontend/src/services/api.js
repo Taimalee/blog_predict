@@ -111,50 +111,73 @@ export const api = {
   },
 
   // Predictions
-  predictBasic: async (text, numWords = 5) => {
-    const userId = localStorage.getItem('userId');
-    if (!userId) {
-      throw new Error('User not logged in');
+  predictAdvanced: async (text) => {
+    try {
+      const response = await fetch(`${API_URL}/predict/advanced`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+        credentials: 'omit'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.predictions || [];
+    } catch (error) {
+      console.error('Prediction error:', error);
+      return [];
     }
-    const response = await fetch(`${API_URL}/api/v1/predict/basic`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ 
-        text, 
-        num_words: numWords, 
-        user_id: userId,
-        model_type: "basic"
-      }),
-    });
-    return handleResponse(response);
   },
 
-  predictAdvanced: async (text, numWords = 5) => {
-    const userId = localStorage.getItem('userId');
-    if (!userId) {
-      throw new Error('User not logged in');
+  predictBasic: async (text) => {
+    try {
+      const response = await fetch(`${API_URL}/predict/basic`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+        credentials: 'omit'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.predictions || [];
+    } catch (error) {
+      console.error('Prediction error:', error);
+      return [];
     }
-    const response = await fetch(`${API_URL}/api/v1/predict/advanced`, {
-      method: 'POST',
-      headers: getHeaders(),
-      credentials: 'include',
-      body: JSON.stringify({ 
-        text, 
-        num_words: numWords, 
-        user_id: userId,
-        model_type: "advanced"
-      }),
-    });
-    return handleResponse(response);
   },
 
   spellCheck: async (text) => {
-    const response = await fetch(`${API_URL}/api/v1/predict/spellcheck`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ text }),
-    });
-    return handleResponse(response);
+    try {
+      const response = await fetch(`${API_URL}/predict/spellcheck`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+        credentials: 'omit'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Spell check error:', error);
+      return { corrected: text };
+    }
   },
 
   trackSuggestion: async (data) => {
