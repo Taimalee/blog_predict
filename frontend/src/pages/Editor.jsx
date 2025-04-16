@@ -67,16 +67,13 @@ const Editor = () => {
           const post = await api.getPost(postId);
           if (post) {
             setTitle(post.title || '');
+            setContent(post.content || '');
             if (editorRef.current) {
-              editorRef.current.textContent = post.content || '';
-              // Trigger input event to initialize content state
-              const event = new Event('input', { bubbles: true });
-              editorRef.current.dispatchEvent(event);
+              editorRef.current.value = post.content || '';
             }
           }
         } catch (error) {
           console.error('Error fetching draft:', error);
-          // Show error to user
           alert('Could not load the draft. Please try again.');
         }
       }
@@ -477,7 +474,6 @@ const Editor = () => {
   const handleSaveDraft = async () => {
     try {
       const userId = localStorage.getItem('userId');
-      const content = editorRef.current.textContent;
       
       if (postId) {
         // Update existing draft
@@ -746,51 +742,11 @@ const Editor = () => {
               <div className="p-4">
                 <h2 className="text-xl font-semibold mb-4">Predictions</h2>
                 <div className="space-y-4">
-                  {/* Auto-complete Toggle */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">Auto-complete</h3>
-                      <p className="text-sm text-gray-500">Get word suggestions as you type</p>
-                    </div>
-                    <button
-                      onClick={() => setIsAutoCompleteEnabled(!isAutoCompleteEnabled)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        isAutoCompleteEnabled ? 'bg-black' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          isAutoCompleteEnabled ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Spell Check Toggle */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">Spell Check</h3>
-                      <p className="text-sm text-gray-500">Auto-correct spelling mistakes</p>
-                    </div>
-                    <button
-                      onClick={() => setIsSpellCheckEnabled(!isSpellCheckEnabled)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        isSpellCheckEnabled ? 'bg-black' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          isSpellCheckEnabled ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
                   {/* Advanced Model Toggle */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium">Advanced Model</h3>
-                      <p className="text-sm text-gray-500">Use GPT-3.5 for better predictions</p>
+                      <h3 className="font-medium">Advanced GPT Model</h3>
+                      <p className="text-sm text-gray-500">Use our advanced model for better predictions</p>
                     </div>
                     <button
                       onClick={() => setIsAdvancedModel(!isAdvancedModel)}
@@ -801,6 +757,26 @@ const Editor = () => {
                       <span
                         className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                           isAdvancedModel ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Auto-complete Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">Predictions</h3>
+                      <p className="text-sm text-gray-500">Automatically predict words</p>
+                    </div>
+                    <button
+                      onClick={() => setIsAutoCompleteEnabled(!isAutoCompleteEnabled)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        isAutoCompleteEnabled ? 'bg-black' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          isAutoCompleteEnabled ? 'translate-x-6' : 'translate-x-1'
                         }`}
                       />
                     </button>
