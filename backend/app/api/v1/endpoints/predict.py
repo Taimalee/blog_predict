@@ -57,11 +57,12 @@ async def predict_advanced(request: PredictionRequest = Body(...)) -> List[str]:
     try:
         if not request.user_id:
             raise HTTPException(status_code=400, detail="User ID is required")
-        return prediction_service.predict_advanced(
+        predictions = await prediction_service.predict_advanced(
             text=request.text,
             num_words=request.num_words,
             user_id=request.user_id
         )
+        return predictions
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
