@@ -746,18 +746,102 @@ const Editor = () => {
               <div className="p-4">
                 <h2 className="text-xl font-semibold mb-4">Predictions</h2>
                 <div className="space-y-4">
-                  {suggestions.map((suggestion, index) => (
-                    <div
-                      key={index}
-                      className={`p-2 rounded cursor-pointer ${
-                        index === selectedIndex ? 'bg-blue-100' : 'hover:bg-gray-100'
-                      }`}
-                      onClick={() => handleSuggestionClick(index)}
-                      onMouseEnter={() => handleSuggestionHover(index)}
-                    >
-                      {suggestion}
+                  {/* Auto-complete Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">Auto-complete</h3>
+                      <p className="text-sm text-gray-500">Get word suggestions as you type</p>
                     </div>
-                  ))}
+                    <button
+                      onClick={() => setIsAutoCompleteEnabled(!isAutoCompleteEnabled)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        isAutoCompleteEnabled ? 'bg-black' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          isAutoCompleteEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Spell Check Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">Spell Check</h3>
+                      <p className="text-sm text-gray-500">Auto-correct spelling mistakes</p>
+                    </div>
+                    <button
+                      onClick={() => setIsSpellCheckEnabled(!isSpellCheckEnabled)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        isSpellCheckEnabled ? 'bg-black' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          isSpellCheckEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Advanced Model Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">Advanced Model</h3>
+                      <p className="text-sm text-gray-500">Use GPT-3.5 for better predictions</p>
+                    </div>
+                    <button
+                      onClick={() => setIsAdvancedModel(!isAdvancedModel)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        isAdvancedModel ? 'bg-black' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          isAdvancedModel ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Voice Input Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">Voice Input</h3>
+                      <p className="text-sm text-gray-500">Enable voice-to-text</p>
+                    </div>
+                    <button
+                      onClick={handleVoiceInputToggle}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        isVoiceInputEnabled ? 'bg-black' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          isVoiceInputEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Microphone Button (only shown when voice input is enabled) */}
+                  {isVoiceInputEnabled && (
+                    <button
+                      onClick={handleMicToggle}
+                      className={`mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md ${
+                        isListening
+                          ? 'bg-red-500 text-white hover:bg-red-600'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      </svg>
+                      {isListening ? 'Stop Recording' : 'Start Recording'}
+                    </button>
+                  )}
                 </div>
               </div>
             )}
