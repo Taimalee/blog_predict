@@ -39,7 +39,7 @@ export const api = {
   },
 
   logout: async () => {
-    const response = await fetch(`${API_URL}/logout`, {
+    const response = await fetch(`${API_URL}/api/v1/logout`, {
       method: 'POST',
       headers: getHeaders(),
     });
@@ -48,14 +48,14 @@ export const api = {
 
   // Posts
   getPosts: async (userId) => {
-    const response = await fetch(`${API_URL}/posts?user_id=${userId}`, {
+    const response = await fetch(`${API_URL}/api/v1/posts?user_id=${userId}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);
   },
 
   getPost: async (postId) => {
-    const response = await fetch(`${API_URL}/posts/${postId}`, {
+    const response = await fetch(`${API_URL}/api/v1/posts/${postId}`, {
       method: 'GET',
       headers: getHeaders(),
     });
@@ -63,7 +63,7 @@ export const api = {
   },
 
   saveDraft: async (data) => {
-    const response = await fetch(`${API_URL}/posts/draft`, {
+    const response = await fetch(`${API_URL}/api/v1/posts/draft`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({
@@ -77,7 +77,7 @@ export const api = {
   },
 
   updatePost: async (postId, data) => {
-    const response = await fetch(`${API_URL}/posts/${postId}`, {
+    const response = await fetch(`${API_URL}/api/v1/posts/${postId}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify({
@@ -91,7 +91,7 @@ export const api = {
 
   getDrafts: async () => {
     const userId = localStorage.getItem('userId');
-    const response = await fetch(`${API_URL}/posts/drafts/${userId}`, {
+    const response = await fetch(`${API_URL}/api/v1/posts/drafts/${userId}`, {
         method: 'GET',
         headers: getHeaders(),
     });
@@ -99,7 +99,7 @@ export const api = {
   },
 
   deletePost: async (postId) => {
-    const response = await fetch(`${API_URL}/posts/${postId}`, {
+    const response = await fetch(`${API_URL}/api/v1/posts/${postId}`, {
       method: 'DELETE',
       headers: getHeaders(),
     });
@@ -112,10 +112,15 @@ export const api = {
     if (!userId) {
       throw new Error('User not logged in');
     }
-    const response = await fetch(`${API_URL}/predict/basic`, {
+    const response = await fetch(`${API_URL}/api/v1/predict/basic`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ text, num_words: numWords, user_id: userId }),
+      body: JSON.stringify({ 
+        text, 
+        num_words: numWords, 
+        user_id: userId,
+        model_type: "basic"
+      }),
     });
     return handleResponse(response);
   },
@@ -125,16 +130,21 @@ export const api = {
     if (!userId) {
       throw new Error('User not logged in');
     }
-    const response = await fetch(`${API_URL}/predict/advanced`, {
+    const response = await fetch(`${API_URL}/api/v1/predict/advanced`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ text, num_words: numWords, user_id: userId }),
+      body: JSON.stringify({ 
+        text, 
+        num_words: numWords, 
+        user_id: userId,
+        model_type: "advanced"
+      }),
     });
     return handleResponse(response);
   },
 
   spellCheck: async (text) => {
-    const response = await fetch(`${API_URL}/predict/spellcheck`, {
+    const response = await fetch(`${API_URL}/api/v1/predict/spellcheck`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ text }),
@@ -147,7 +157,7 @@ export const api = {
     if (!userId) {
       throw new Error('User not logged in');
     }
-    const response = await fetch(`${API_URL}/predict/track`, {
+    const response = await fetch(`${API_URL}/api/v1/predict/track`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ ...data, user_id: userId }),
@@ -160,7 +170,7 @@ export const api = {
     if (!userId) {
       throw new Error('User not logged in');
     }
-    const response = await fetch(`${API_URL}/predict/stats/${userId}`, {
+    const response = await fetch(`${API_URL}/api/v1/predict/stats/${userId}`, {
       method: 'GET',
       headers: getHeaders(),
     });
@@ -172,7 +182,7 @@ export const api = {
     if (!userId) {
       throw new Error('User not logged in');
     }
-    const response = await fetch(`${API_URL}/posts/stats/${userId}`, {
+    const response = await fetch(`${API_URL}/api/v1/posts/stats/${userId}`, {
       method: 'GET',
       headers: getHeaders(),
     });
