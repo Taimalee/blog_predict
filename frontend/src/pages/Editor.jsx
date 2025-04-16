@@ -955,6 +955,46 @@ const Editor = () => {
                 </div>
               </div>
             )}
+<<<<<<< HEAD
+=======
+
+            {activeTab === 'predictions' && (
+              <>
+                {/* Predictions Content */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-base font-medium">Advanced GPT Models</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={isAdvancedModel}
+                        onChange={(e) => setIsAdvancedModel(e.target.checked)}
+                      />
+                      <div className="w-[52px] h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all"></div>
+                    </label>
+                  </div>
+                  <p className="text-sm text-gray-500">Use our advanced model for better predictions</p>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-base font-medium">Predictions</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={isAutoCompleteEnabled}
+                        onChange={(e) => setIsAutoCompleteEnabled(e.target.checked)}
+                      />
+                      <div className="w-[52px] h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all"></div>
+                    </label>
+                  </div>
+                  <p className="text-sm text-gray-500">Automatically predict words</p>
+                </div>
+              </>
+            )}
+>>>>>>> 7512b36 (newly added)
           </div>
         </div>
       </div>
