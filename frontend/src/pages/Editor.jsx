@@ -112,8 +112,8 @@ const Editor = () => {
           wordCount: wordsBeforeCursor.length
         });
         
-        // Only predict if we have at least two words and are typing a new word
-        if (wordsBeforeCursor.length >= 2 && currentWord.length > 0) {
+        // Only predict if we have at least 2 words and current word is at least 2 characters
+        if (wordsBeforeCursor.length >= 2 && currentWord.length >= 2) {
           const userId = localStorage.getItem('userId');
           if (!userId) {
             console.error('User ID not found');
@@ -155,7 +155,7 @@ const Editor = () => {
         console.error('Prediction error:', error);
         setSuggestions([]);
       }
-    }, 150),
+    }, 300), // Increased from 150ms to 300ms
     [isAutoCompleteEnabled, isAdvancedModel]
   );
 

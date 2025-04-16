@@ -10,6 +10,10 @@ from app.services.suggestion_tracker import suggestion_tracker
 import os
 import re
 import gc
+import openai
+import logging
+
+logger = logging.getLogger(__name__)
 
 class PredictionService:
     _instance = None
@@ -143,7 +147,7 @@ class PredictionService:
                     # Update patterns with current text
                     self.pattern_service.update_user_patterns(user_id, text)
                 except Exception as e:
-                    print(f"Error getting user patterns: {e}")
+                    logger.error(f"Error getting user patterns: {e}")
                     user_patterns = None
                     
             # Get user feedback statistics to adjust model parameters
@@ -165,9 +169,9 @@ class PredictionService:
                             # User rejects many suggestions, increase temperature for more variety
                             temperature = 0.9
                 except Exception as e:
-                    print(f"Error getting suggestion stats: {e}")
+                    logger.error(f"Error getting suggestion stats: {e}")
             
-            # Build a more detailed system prompt with few-shot examples
+            # Keep the original system prompt
             system_prompt = """You are a sophisticated AI writing assistant designed to predict the next few words in blog posts across a variety of topics. 
             Your task is to generate natural, coherent continuations for any given piece of text, maintaining the original tone and context.
 
@@ -218,30 +222,35 @@ Guidelines:
                         if transition_words:
                             user_prompt += f" Consider using transitions like: {', '.join(transition_words)}."
             
+            # Make the optimized API call
             response = await self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=50,
-                temperature=temperature
+                max_tokens=20,  # Reduced for faster response
+                temperature=temperature,
+                presence_penalty=0.5,  # Added to reduce repetition
+                frequency_penalty=0.5,  # Added to reduce common words
+                top_p=0.9,  # Added for better quality while maintaining speed
+                n=3  # Return 3 predictions for user choice
             )
             
-            predictions = response.choices[0].message.content.strip().split()
+            # Process all predictions
+            all_predictions = []
+            for choice in response.choices:
+                predictions = choice.message.content.strip().split()
+                for pred in predictions:
+                    # Remove any unwanted characters
+                    cleaned_pred = re.sub(r'[^a-zA-Z0-9\-\']', '', pred)
+                    if cleaned_pred and cleaned_pred not in all_predictions:
+                        all_predictions.append(cleaned_pred)
             
-            # Process predictions to handle formatting or special characters
-            filtered_predictions = []
-            for pred in predictions:
-                # Remove any unwanted characters
-                cleaned_pred = re.sub(r'[^a-zA-Z0-9\-\']', '', pred)
-                if cleaned_pred and cleaned_pred not in filtered_predictions:
-                    filtered_predictions.append(cleaned_pred)
-            
-            return filtered_predictions[:num_words]
+            return all_predictions[:num_words]
             
         except Exception as e:
-            print(f"Error in GPT prediction: {e}")
+            logger.error(f"Error in GPT prediction: {e}")
             return self.predict_basic(text, num_words, user_id)
 
     async def spellcheck_text(self, text: str) -> str:
