@@ -184,24 +184,8 @@ const Editor = () => {
           textBeforeCursor
         });
         
-        // Skip if the last word is empty or contains special characters
-        if (!lastWord || !/^[a-zA-Z]+$/.test(lastWord) || 
-            lastWord.toLowerCase().includes('fix') || 
-            lastWord.toLowerCase().includes('spell') || 
-            lastWord.toLowerCase().includes('grammar') ||
-            lastWord.toLowerCase().includes('error') ||
-            lastWord.toLowerCase().includes('corrected')) {
-          console.log('Spell check skipped due to conditions:', {
-            isEmpty: !lastWord,
-            isNotAlpha: !/^[a-zA-Z]+$/.test(lastWord),
-            containsFix: lastWord.toLowerCase().includes('fix'),
-            containsSpell: lastWord.toLowerCase().includes('spell'),
-            containsGrammar: lastWord.toLowerCase().includes('grammar'),
-            containsError: lastWord.toLowerCase().includes('error'),
-            containsCorrected: lastWord.toLowerCase().includes('corrected')
-          });
-          return;
-        }
+        // Only check if we have a word to check
+        if (!lastWord) return;
         
         console.log('Making spell check API call for word:', lastWord);
         const result = await api.spellCheck(lastWord);
@@ -209,8 +193,7 @@ const Editor = () => {
         
         if (result.corrected && 
             result.corrected !== lastWord && 
-            result.corrected.toLowerCase() !== lastWord.toLowerCase() &&
-            /^[a-zA-Z]+$/.test(result.corrected)) {
+            result.corrected.toLowerCase() !== lastWord.toLowerCase()) {
           
           // Find the position of the last word
           const lastWordStartPos = textBeforeCursor.lastIndexOf(lastWord);
