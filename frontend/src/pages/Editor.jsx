@@ -742,7 +742,7 @@ const Editor = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium">Advanced GPT Model</h3>
-                    <p className="text-sm text-gray-500">Use our advanced model for better predictions</p>
+                    <p className="text-sm text-gray-500">Use our advanced model</p>
                   </div>
                   <button
                     onClick={() => setIsAdvancedModel(!isAdvancedModel)}
