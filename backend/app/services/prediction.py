@@ -14,6 +14,7 @@ import gc
 class PredictionService:
     _instance = None
     _ngram_model = None
+    _model_loaded = False
 
     def __new__(cls):
         if cls._instance is None:
@@ -28,14 +29,22 @@ class PredictionService:
             self.initialized = True
 
     def _get_ngram_model(self):
-        if self._ngram_model is None:
+        if not self._model_loaded:
             self._ngram_model = NGramModel()
             model_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'ngram_model.json')
             if os.path.exists(model_path):
                 self._ngram_model.load(model_path)
                 # Force garbage collection after loading
                 gc.collect()
+                self._model_loaded = True
         return self._ngram_model
+
+    def _unload_ngram_model(self):
+        """Unload the ngram model to free memory"""
+        if self._model_loaded:
+            self._ngram_model = None
+            self._model_loaded = False
+            gc.collect()
 
     def train_ngram_model(self, text: str) -> None:
         """Train the n-gram model on input text."""
@@ -49,56 +58,63 @@ class PredictionService:
 
     def predict_basic(self, text: str, num_words: int = 5, user_id: str = None) -> List[str]:
         """Basic prediction using n-gram model with user patterns."""
-        # Get user patterns if user_id is provided
-        user_patterns = None
-        if user_id:
-            try:
-                user_patterns = self.pattern_service.get_user_patterns(user_id)
-                # Update patterns with current text
-                self.pattern_service.update_user_patterns(user_id, text)
-            except Exception as e:
-                print(f"Error getting user patterns: {e}")
-                user_patterns = None
-        
-        # Get n-gram predictions with expanded context window
-        ngram_model = self._get_ngram_model()
-        predictions = ngram_model.predict(text, num_words, context_window=4)
-        
-        # Filter out special tokens and duplicates
-        filtered_predictions = []
-        seen = set()
-        special_tokens = {'@-@', '<unk>'}
-        for pred in predictions:
-            if pred not in special_tokens and re.match(r'^\w+$', pred):
-                if pred not in seen:
-                    filtered_predictions.append(pred)
-                    seen.add(pred)
-        
-        # Get personalized suggestions
-        personalized_suggestions = []
-        if user_patterns and isinstance(user_patterns, dict):
-            try:
-                personalized_suggestions = self.pattern_service.get_suggestions(user_id, text)
-            except Exception as e:
-                print(f"Error getting suggestions: {e}")
-        
-        # Blend personalized suggestions with n-gram predictions
-        if personalized_suggestions and isinstance(personalized_suggestions, list):
-            blended_predictions = []
-            # Use 60% personalized, 40% n-gram predictions
-            personal_count = min(int(num_words * 0.6) + 1, len(personalized_suggestions))
-            ngram_count = num_words - personal_count
+        try:
+            # Get user patterns if user_id is provided
+            user_patterns = None
+            if user_id:
+                try:
+                    user_patterns = self.pattern_service.get_user_patterns(user_id)
+                    # Update patterns with current text
+                    self.pattern_service.update_user_patterns(user_id, text)
+                except Exception as e:
+                    print(f"Error getting user patterns: {e}")
+                    user_patterns = None
             
-            blended_predictions.extend(personalized_suggestions[:personal_count])
+            # Get n-gram predictions with expanded context window
+            ngram_model = self._get_ngram_model()
+            predictions = ngram_model.predict(text, num_words, context_window=4)
             
-            # Add n-gram predictions not already in blended list
-            for pred in filtered_predictions:
-                if pred not in blended_predictions and len(blended_predictions) < num_words:
-                    blended_predictions.append(pred)
+            # Immediately unload the model after prediction
+            self._unload_ngram_model()
+            
+            # Filter out special tokens and duplicates
+            filtered_predictions = []
+            seen = set()
+            special_tokens = {'@-@', '<unk>'}
+            for pred in predictions:
+                if pred not in special_tokens and re.match(r'^\w+$', pred):
+                    if pred not in seen:
+                        filtered_predictions.append(pred)
+                        seen.add(pred)
+            
+            # Get personalized suggestions
+            personalized_suggestions = []
+            if user_patterns and isinstance(user_patterns, dict):
+                try:
+                    personalized_suggestions = self.pattern_service.get_suggestions(user_id, text)
+                except Exception as e:
+                    print(f"Error getting suggestions: {e}")
+            
+            # Blend personalized suggestions with n-gram predictions
+            if personalized_suggestions and isinstance(personalized_suggestions, list):
+                blended_predictions = []
+                # Use 60% personalized, 40% n-gram predictions
+                personal_count = min(int(num_words * 0.6) + 1, len(personalized_suggestions))
+                ngram_count = num_words - personal_count
                 
-            return blended_predictions[:num_words]
-        
-        return filtered_predictions[:num_words]
+                blended_predictions.extend(personalized_suggestions[:personal_count])
+                
+                # Add n-gram predictions not already in blended list
+                for pred in filtered_predictions:
+                    if pred not in blended_predictions and len(blended_predictions) < num_words:
+                        blended_predictions.append(pred)
+                    
+                return blended_predictions[:num_words]
+            
+            return filtered_predictions[:num_words]
+        except Exception as e:
+            print(f"Error in basic prediction: {e}")
+            return []
 
     async def predict_advanced(self, text: str, num_words: int = 5, user_id: str = None, context_data: Dict = None) -> List[str]:
         """

@@ -3,6 +3,7 @@ from collections import defaultdict
 import json
 import os
 import math
+import gc
 
 class NGramModel:
     def __init__(self):
@@ -11,6 +12,7 @@ class NGramModel:
         self.fourgrams = defaultdict(lambda: defaultdict(int))
         self.unigrams = defaultdict(int)
         self.total_words = 0
+        self._loaded = False
         
     def train(self, text: str) -> None:
         """Train the model on input text."""
@@ -32,6 +34,9 @@ class NGramModel:
         # Train 4-grams
         for i in range(len(words) - 3):
             self.fourgrams[(words[i], words[i + 1], words[i + 2])][words[i + 3]] += 1
+            
+        # Force garbage collection after training
+        gc.collect()
             
     def predict(self, text: str, num_words: int = 5, context_window: int = 3) -> List[str]:
         """
@@ -131,22 +136,32 @@ class NGramModel:
         with open(filepath, 'r') as f:
             data = json.load(f)
             
-        self.bigrams = defaultdict(lambda: defaultdict(int))
+        # Clear existing data
+        self.bigrams.clear()
+        self.trigrams.clear()
+        self.fourgrams.clear()
+        self.unigrams.clear()
+        
+        # Load new data
         for k, v in data['bigrams'].items():
             self.bigrams[k].update(v)
             
-        self.trigrams = defaultdict(lambda: defaultdict(int))
         for k, v in data['trigrams'].items():
             k_tuple = tuple(eval(k))
             self.trigrams[k_tuple].update(v)
             
-        self.fourgrams = defaultdict(lambda: defaultdict(int))
         if 'fourgrams' in data:
             for k, v in data['fourgrams'].items():
                 k_tuple = tuple(eval(k))
                 self.fourgrams[k_tuple].update(v)
                 
-        self.unigrams = defaultdict(int)
         self.unigrams.update(data['unigrams'])
+        self.total_words = data.get('total_words', sum(self.unigrams.values()))
+        self._loaded = True
         
-        self.total_words = data.get('total_words', sum(self.unigrams.values())) 
+        # Force garbage collection after loading
+        gc.collect()
+        
+    def _is_loaded(self) -> bool:
+        """Check if the model is loaded."""
+        return self._loaded 
