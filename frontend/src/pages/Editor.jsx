@@ -122,12 +122,16 @@ const Editor = () => {
 
           // Choose the prediction function based on the toggle state
           const predictionFunction = isAdvancedModel ? api.predictAdvanced : api.predictBasic;
-          const predictions = await predictionFunction(textBeforeCursor, 3, userId);
+          const predictions = await predictionFunction(textBeforeCursor, 3, userId); // Increased to 5 predictions
           console.log('API predictions:', predictions);
           
           if (predictions && predictions.length > 0) {
-            // For single-word predictions, just use them directly
-            const suggestions = predictions.map(pred => pred);
+            // Filter out very short or incomplete words
+            const suggestions = predictions
+              .filter(pred => pred.length > 2) // Only show words longer than 2 characters
+              .filter(pred => !pred.includes('...')) // Filter out incomplete words
+              .slice(0, 3); // Take top 3 filtered suggestions
+            
             console.log('Final suggestions:', suggestions);
             setSuggestions(suggestions);
             setSelectedIndex(0);
@@ -677,7 +681,7 @@ const Editor = () => {
                 className="fixed bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-[1000]"
                 style={{
                   left: `${cursorPosition.x}px`,
-                  top: `${cursorPosition.y + 25}px`,
+                  top: `${cursorPosition.y + 45}px`,
                   minWidth: '200px',
                   maxWidth: '300px',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
