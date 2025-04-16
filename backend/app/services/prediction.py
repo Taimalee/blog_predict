@@ -261,24 +261,12 @@ Guidelines:
             if not text or ' ' in text or not text.strip().isalpha():
                 return {"corrected": text, "confidence": 0.0}
 
-            # Skip common words and short words
-            if len(text) < 4 or text.lower() in {
-                'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have',
-                'i', 'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at'
-            }:
-                return {"corrected": text, "confidence": 1.0}
-
-            # Skip proper nouns (words starting with capital letters)
-            if text[0].isupper():
-                return {"corrected": text, "confidence": 1.0}
-
             system_prompt = """You are a precise spell checker. Your task is to:
 1. If the word is spelled correctly, return it unchanged with confidence 1.0
 2. If the word is misspelled, return the corrected word with a confidence score between 0.0 and 1.0
 3. Preserve the original case of the word
 4. Only correct obvious spelling mistakes
-5. Do not change proper nouns or technical terms
-6. Return the word and confidence score in JSON format: {"word": "corrected_word", "confidence": 0.95}
+5. Return the word and confidence score in JSON format: {"word": "corrected_word", "confidence": 0.95}
 
 Examples:
 Input: "teh"
