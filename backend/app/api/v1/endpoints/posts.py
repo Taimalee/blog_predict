@@ -58,12 +58,12 @@ def get_user_stats(
     # Calculate stats
     drafts = sum(1 for post in posts if post.status == 'draft')
     published = sum(1 for post in posts if post.status == 'published')
-    total_words = sum(len(post.content.split()) for post in posts)
+    words = sum(len(post.content.split()) for post in posts)
     
     return {
-        "total_words": total_words,
-        "drafts_count": drafts,
-        "published_count": published
+        "words": words,
+        "drafts": drafts,
+        "published": published
     }
 
 @router.post("/draft")

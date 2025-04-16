@@ -122,19 +122,29 @@ const Editor = () => {
 
           // Choose the prediction function based on the toggle state
           const predictionFunction = isAdvancedModel ? api.predictAdvanced : api.predictBasic;
-          const predictions = await predictionFunction(textBeforeCursor, 3, userId); // Increased to 5 predictions
+          const predictions = await predictionFunction(textBeforeCursor, 3, userId);
           console.log('API predictions:', predictions);
           
           if (predictions && predictions.length > 0) {
             // Filter out very short or incomplete words
             const suggestions = predictions
-              .filter(pred => pred.length > 2) // Only show words longer than 2 characters
-              .filter(pred => !pred.includes('...')) // Filter out incomplete words
-              .slice(0, 3); // Take top 3 filtered suggestions
+              .filter(pred => pred.length > 2)
+              .filter(pred => !pred.includes('...'))
+              .slice(0, 3);
             
             console.log('Final suggestions:', suggestions);
             setSuggestions(suggestions);
             setSelectedIndex(0);
+
+            // Track shown suggestions
+            try {
+              await api.trackSuggestion({
+                user_id: userId,
+                shown: suggestions.length
+              });
+            } catch (error) {
+              console.error('Error tracking shown suggestions:', error);
+            }
           } else {
             setSuggestions([]);
           }
@@ -257,22 +267,15 @@ const Editor = () => {
     let newContent;
     
     // Check if the suggestion is a completion of the current word
-    // For example: "witho" + "ut" = "without"
     if (suggestion.length <= lastWord.length) {
-        // If suggestion is shorter than the current word, it's likely a completion
-        // Check if the suggestion is a substring of the current word
         if (lastWord.includes(suggestion)) {
-            // Case A: Completion
             newContent = content.slice(0, startPos) + suggestion + content.slice(cursorPos);
         } else {
-            // Case B: Replacement
             newContent = content.slice(0, startPos) + suggestion + content.slice(cursorPos);
         }
     } else if (suggestion.startsWith(lastWord)) {
-        // Case C: Suggestion starts with the current word
         newContent = content.slice(0, startPos) + suggestion + content.slice(cursorPos);
     } else {
-        // Case D: New Word
         newContent = content.slice(0, cursorPos) + ' ' + suggestion + content.slice(cursorPos);
     }
     
@@ -285,6 +288,19 @@ const Editor = () => {
         textarea.selectionStart = newCursorPos;
         textarea.selectionEnd = newCursorPos;
     }, 0);
+
+    // Track accepted suggestion
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+      try {
+        await api.trackSuggestion({
+          user_id: userId,
+          accepted: true
+        });
+      } catch (error) {
+        console.error('Error tracking accepted suggestion:', error);
+      }
+    }
   };
 
   // Handle suggestion click
