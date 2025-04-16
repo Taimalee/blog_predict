@@ -14,8 +14,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",  # Local development
-        "https://predict-frontend.onrender.com",  # Production frontend
-        "https://blogpredict.onrender.com"  # New frontend domain
+        "https://predict-frontend.onrender.com"  # Production frontend
     ],
     allow_credentials=True,
     allow_methods=["*"],
