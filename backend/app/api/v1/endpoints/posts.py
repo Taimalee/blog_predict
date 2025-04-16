@@ -120,7 +120,7 @@ def create_post(
 
 @router.put("/{id}")
 def update_post(
-    id: UUID,
+    id: int,
     post_data: PostUpdate = Body(...),
     db: Session = Depends(deps.get_db)
 ) -> dict:
@@ -151,7 +151,7 @@ def read_post(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     return {
-        "id": post.id,
+        "id": str(post.id),
         "title": post.title,
         "content": post.content,
         "status": post.status,

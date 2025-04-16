@@ -9,7 +9,7 @@ def train_ngram_model():
     
     # Load the dataset (using wikitext as it's well-formatted and clean)
     print("Loading dataset...")
-    dataset = load_dataset("wikitext", "wikitext-103-v1", split="train")
+    dataset = load_dataset("wikitext", "wikitext-2-v1", split="train")
     
     # Process and train on the dataset
     print("Training n-gram model...")
