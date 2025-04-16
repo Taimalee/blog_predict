@@ -3,24 +3,21 @@ from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from app.api import deps
 from app import crud
-from pydantic import BaseModel
+from app.schemas.user import UserCreate
 
 router = APIRouter()
 
-class SignupRequest(BaseModel):
-    email: str
-    password: str
-
 @router.post("/signup")
 def signup(
-    signup_data: SignupRequest = Body(...),
-    db: Session = Depends(deps.get_db)
+    *,
+    db: Session = Depends(deps.get_db),
+    user_in: UserCreate = Body(...)
 ) -> Any:
     """
     Create new user with email and password.
     """
     # Check if user with this email already exists
-    user = crud.user.get_by_email(db, email=signup_data.email)
+    user = crud.user.get_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=400,
@@ -28,7 +25,7 @@ def signup(
         )
     
     # Create new user
-    user = crud.user.create(db, email=signup_data.email, password=signup_data.password)
+    user = crud.user.create(db, obj_in=user_in)
     return {"message": "User created successfully", "user_id": str(user.id)}
 
 @router.post("/logout")
