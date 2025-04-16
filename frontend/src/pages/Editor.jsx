@@ -162,7 +162,6 @@ const Editor = () => {
   // Debounced spell check function
   const debouncedSpellCheck = useCallback(
     debounce(async (text) => {
-      console.log('Spell check triggered, enabled:', isSpellCheckEnabled);
       if (!isSpellCheckEnabled) return;
       
       try {
@@ -172,29 +171,15 @@ const Editor = () => {
         const cursorPos = textarea.selectionStart;
         const textBeforeCursor = text.slice(0, cursorPos);
         
-        // Split text into words and get the word before the current one
-        const words = textBeforeCursor.split(/\s+/);
-        const currentWordIndex = words.length - 1;
-        const lastWord = currentWordIndex > 0 ? words[currentWordIndex - 1] : '';
+        // Get the last word (before the space)
+        const words = textBeforeCursor.trim().split(/\s+/);
+        const lastWord = words[words.length - 1];
         
-        console.log('Spell check debug:', {
-          lastWord,
-          currentWordIndex,
-          words,
-          textBeforeCursor
-        });
-        
-        // Only check if we have a word to check
         if (!lastWord) return;
         
-        console.log('Making spell check API call for word:', lastWord);
         const result = await api.spellCheck(lastWord);
-        console.log('Spell check API response:', result);
         
-        if (result.corrected && 
-            result.corrected !== lastWord && 
-            result.corrected.toLowerCase() !== lastWord.toLowerCase()) {
-          
+        if (result.corrected && result.corrected !== lastWord) {
           // Find the position of the last word
           const lastWordStartPos = textBeforeCursor.lastIndexOf(lastWord);
           if (lastWordStartPos === -1) return;
@@ -204,21 +189,17 @@ const Editor = () => {
           const afterLastWord = text.slice(lastWordStartPos + lastWord.length);
           const newContent = beforeLastWord + result.corrected + afterLastWord;
           
-          // Calculate new cursor position
-          const cursorOffset = cursorPos - (lastWordStartPos + lastWord.length);
-          const newCursorPos = lastWordStartPos + result.corrected.length + cursorOffset;
-          
           // Update content and maintain cursor position
           setContent(newContent);
           setTimeout(() => {
-            textarea.selectionStart = newCursorPos;
-            textarea.selectionEnd = newCursorPos;
+            textarea.selectionStart = cursorPos;
+            textarea.selectionEnd = cursorPos;
           }, 0);
         }
       } catch (error) {
         console.error('Spell check error:', error);
       }
-    }, 500), // Reduced debounce time for more responsive spell checking
+    }, 100),
     [isSpellCheckEnabled]
   );
 
@@ -360,7 +341,7 @@ const Editor = () => {
     return { x: boundedX, y };
   };
 
-  // Update handleInput function
+  // Handle input changes
   const handleInput = (e) => {
     const newContent = e.target.value;
     setContent(newContent);
@@ -371,9 +352,6 @@ const Editor = () => {
       const cursorPos = textarea.selectionStart;
       const position = calculateCursorPosition(textarea, newContent, cursorPos);
       setCursorPosition(position);
-      
-      console.log('Cursor position:', position);
-      console.log('Suggestions state:', suggestions);
     }
     
     // Handle predictions if content exists and auto-complete is enabled
@@ -383,21 +361,9 @@ const Editor = () => {
       setSuggestions([]);
     }
 
-    // Only check spelling when space is pressed after typing a word
-    if (isSpellCheckEnabled && e.nativeEvent.inputType === 'insertText' && e.nativeEvent.data === ' ') {
-      const textBeforeCursor = newContent.slice(0, textarea.selectionStart - 1); // -1 to exclude the space
-      const words = textBeforeCursor.split(/\s+/);
-      const lastWord = words[words.length - 1];
-      
-      // Skip if the last word is empty or contains special characters
-      if (lastWord && /^[a-zA-Z]+$/.test(lastWord) && 
-          !lastWord.toLowerCase().includes('fix') && 
-          !lastWord.toLowerCase().includes('spell') && 
-          !lastWord.toLowerCase().includes('grammar') &&
-          !lastWord.toLowerCase().includes('error') &&
-          !lastWord.toLowerCase().includes('corrected')) {
-        debouncedSpellCheck(lastWord);
-      }
+    // Check spelling when space is pressed
+    if (e.nativeEvent.inputType === 'insertText' && e.nativeEvent.data === ' ') {
+      debouncedSpellCheck(newContent);
     }
   };
 
