@@ -743,73 +743,23 @@ const Editor = () => {
             </div>
 
             {activeTab === 'predictions' && (
-              <>
-                {/* Advanced Model Toggle */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-base font-medium">Advanced GPT Model</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer" 
-                        checked={isAdvancedModel}
-                        onChange={(e) => setIsAdvancedModel(e.target.checked)}
-                      />
-                      <div className="w-[52px] h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all"></div>
-                    </label>
-                  </div>
-                  <p className="text-sm text-gray-500">Use our advanced model for better predictions</p>
-                </div>
-
-                {/* Auto-complete Toggle */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-base font-medium">Predictions</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer" 
-                        checked={isAutoCompleteEnabled}
-                        onChange={(e) => setIsAutoCompleteEnabled(e.target.checked)}
-                      />
-                      <div className="w-[52px] h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all"></div>
-                    </label>
-                  </div>
-                  <p className="text-sm text-gray-500">Automatically predict words</p>
-                </div>
-
-                {/* Voice Input Toggle */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-base font-medium">Voice Input</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer" 
-                        checked={isVoiceInputEnabled}
-                        onChange={handleVoiceInputToggle}
-                      />
-                      <div className="w-[52px] h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all"></div>
-                    </label>
-                  </div>
-                  <p className="text-sm text-gray-500">Enable voice input for predictions</p>
-                  
-                  {/* Voice Input Button */}
-                  {isVoiceInputEnabled && (
-                    <button 
-                      onClick={handleMicToggle}
-                      className={`mt-2 flex items-center gap-2 px-4 py-2 ${
-                        isListening ? 'bg-red-500' : 'bg-gray-200'
-                      } text-white rounded-md hover:bg-gray-300 w-full justify-center`}
+              <div className="p-4">
+                <h2 className="text-xl font-semibold mb-4">Predictions</h2>
+                <div className="space-y-4">
+                  {suggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className={`p-2 rounded cursor-pointer ${
+                        index === selectedIndex ? 'bg-blue-100' : 'hover:bg-gray-100'
+                      }`}
+                      onClick={() => handleSuggestionClick(index)}
+                      onMouseEnter={() => handleSuggestionHover(index)}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 1v11m0 0a4 4 0 01-4-4V5a4 4 0 018 0v3a4 4 0 01-4 4zm0 0v4m0 4h-4m4 0h4" />
-                      </svg>
-                      {isListening ? 'Stop Listening' : 'Start Listening'}
-                    </button>
-                  )}
+                      {suggestion}
+                    </div>
+                  ))}
                 </div>
-              </>
+              </div>
             )}
 
             {activeTab === 'settings' && (
@@ -955,46 +905,6 @@ const Editor = () => {
                 </div>
               </div>
             )}
-<<<<<<< HEAD
-=======
-
-            {activeTab === 'predictions' && (
-              <>
-                {/* Predictions Content */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-base font-medium">Advanced GPT Model</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer" 
-                        checked={isAdvancedModel}
-                        onChange={(e) => setIsAdvancedModel(e.target.checked)}
-                      />
-                      <div className="w-[52px] h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all"></div>
-                    </label>
-                  </div>
-                  <p className="text-sm text-gray-500">Use our advanced model for better predictions</p>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-base font-medium">Predictions</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer" 
-                        checked={isAutoCompleteEnabled}
-                        onChange={(e) => setIsAutoCompleteEnabled(e.target.checked)}
-                      />
-                      <div className="w-[52px] h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all"></div>
-                    </label>
-                  </div>
-                  <p className="text-sm text-gray-500">Automatically predict words</p>
-                </div>
-              </>
-            )}
->>>>>>> 7512b36 (newly added)
           </div>
         </div>
       </div>
