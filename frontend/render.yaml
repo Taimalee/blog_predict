@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: predict-frontend
+    runtime: node
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: serve -s build
+    plan: free
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://predict-api.onrender.com 
