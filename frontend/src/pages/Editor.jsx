@@ -114,9 +114,15 @@ const Editor = () => {
         
         // Only predict if we have at least two words and are typing a new word
         if (wordsBeforeCursor.length >= 2 && currentWord.length > 0) {
+          const userId = localStorage.getItem('userId');
+          if (!userId) {
+            console.error('User ID not found');
+            return;
+          }
+
           // Choose the prediction function based on the toggle state
           const predictionFunction = isAdvancedModel ? api.predictAdvanced : api.predictBasic;
-          const predictions = await predictionFunction(textBeforeCursor);
+          const predictions = await predictionFunction(textBeforeCursor, 3, userId);
           console.log('API predictions:', predictions);
           
           if (predictions && predictions.length > 0) {

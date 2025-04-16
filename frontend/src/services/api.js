@@ -111,14 +111,19 @@ export const api = {
   },
 
   // Predictions
-  predictAdvanced: async (text) => {
+  predictAdvanced: async (text, numWords = 5, userId) => {
     try {
       const response = await fetch(`${API_URL}/predict/advanced`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ 
+          text, 
+          num_words: numWords,
+          user_id: userId,
+          model_type: "advanced"
+        }),
         credentials: 'omit'
       });
       
@@ -134,14 +139,19 @@ export const api = {
     }
   },
 
-  predictBasic: async (text) => {
+  predictBasic: async (text, numWords = 5, userId) => {
     try {
       const response = await fetch(`${API_URL}/predict/basic`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ 
+          text, 
+          num_words: numWords,
+          user_id: userId,
+          model_type: "basic"
+        }),
         credentials: 'omit'
       });
       
