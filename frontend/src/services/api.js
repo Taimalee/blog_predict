@@ -113,7 +113,7 @@ export const api = {
   // Predictions
   predictAdvanced: async (text, numWords = 5, userId) => {
     try {
-      const response = await fetch(`${API_URL}/predict/advanced`, {
+      const response = await fetch(`${API_URL}/api/v1/predict/advanced`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -132,7 +132,7 @@ export const api = {
       }
       
       const data = await response.json();
-      return data.predictions || [];
+      return data || [];
     } catch (error) {
       console.error('Prediction error:', error);
       return [];
@@ -141,7 +141,7 @@ export const api = {
 
   predictBasic: async (text, numWords = 5, userId) => {
     try {
-      const response = await fetch(`${API_URL}/predict/basic`, {
+      const response = await fetch(`${API_URL}/api/v1/predict/basic`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -160,7 +160,7 @@ export const api = {
       }
       
       const data = await response.json();
-      return data.predictions || [];
+      return data || [];
     } catch (error) {
       console.error('Prediction error:', error);
       return [];
@@ -169,7 +169,7 @@ export const api = {
 
   spellCheck: async (text) => {
     try {
-      const response = await fetch(`${API_URL}/predict/spellcheck`, {
+      const response = await fetch(`${API_URL}/api/v1/predict/spellcheck`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
